@@ -101,17 +101,17 @@ nil
 {
 	a: 10,
 	b: true,
-	c: "Hello World!",
-	d: "Hi_Im_also_a_string"
+	c: Hello World!,
+	d: Hi_Im_also_a_string
 }
 ```
 
-### Operators
+## Operators
 **Econ** supports
  - Arithmetic ``+``, ``-``, ``*``, ``/``, ``%``
  - Logic ``or``/``||``, ``and``/``&&``, ``not``/``~``
  - Comparison ``>``, ``>=``, ``<``, ``<=``, ``==``, ``~=``
- - Ternary ``condition ? expr if true : expr if false``
+ - Ternary ``?:`` - ``condition ? expr if true : expr if false``
  - Access ``[index/key]``, ``.index/key``
  - Length ``#``
  #### Arithmetic
@@ -146,7 +146,7 @@ Error Parsing -> "Invalid addition of types."
 }
 ```
 >Note: ``nil + {} -> {}`` and ``nil + [] -> []`` this is important for function logic specifically ``fold()``
-#### Logic
+### Logic
 Logical operators are similar to other programming languages and you can use the keywords or symbols. We followed in Lua's footsteps opting to use ``~`` over ``!`` for the ``not`` operator 
 >Input
 ```js
@@ -170,7 +170,7 @@ Logical operators are similar to other programming languages and you can use the
 	f: true
 }
 ```
-#### Comparison
+### Comparison
 >Input
 ```js
 {
@@ -195,7 +195,7 @@ Logical operators are similar to other programming languages and you can use the
 	g: true,
 }
 ```
-#### Ternary
+### Ternary
 >Input
 ```js
 {
@@ -208,11 +208,11 @@ Logical operators are similar to other programming languages and you can use the
 	a: 2
 }
 ```
-#### Access 
+### ``.``/``[]`` Access operator 
 Access operators are used to get elements from arrays and values from objects. Arrays are 0 base indexed. when using ``[]``  you can use expressions as long as they evaluate into strings for objects and numbers for arrays. Additionally you can group expressions for the ``.`` operator like this
 ```js
-	arr: [1,2,3],
-	a: $arr.(1+1) //outputs -> 3
+arr: [1,2,3],
+a: $arr.(1+1) //outputs -> 3
 ```
 >Input
 ```js
@@ -233,16 +233,22 @@ Access operators are used to get elements from arrays and values from objects. A
 	a_0: 1,
 	a_4: 5
 	b: { 
-		name: "Dill", 
+		name: Dill, 
 		age: 20 
 	},
-	c: "Dill is 20 years old"
+	c: Dill is 20 years old
 }
 ```
 >Note: ``.(key/index)`` and ``[key/index]`` function the same essentially. 
+### ``#`` Length operator
+Gets the length of an Object or Array.
+```js
+#[0,1,2,3,4] //outputs -> 5
+#{ a: 1, b: 2, c: 3} // outputs -> 3
+```
 
 ## References
-In **Econ** you can reference keys using the ``$`` or  ``!`` operators.
+In **Econ** you can reference keys using the ``$`` or  ``!`` operators. You cannot reference a key before it is declared.
 ### ``$ ``operator 
 Referenced keys must not contain whitespace or any other reserved operators. References are searched for in the current object depth but you may search up in depth by chaining together ``$``'s. If a key is not found it will return ``Nil``
 
@@ -293,5 +299,407 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 		ca: 30,
 		cb: 10
 	}
+}
+```
+## Functions
+**Econ** supports a set amount of predefined functions; they include:
+
+ - Filter ``filter(obj/array, iter => condition) -> obj/array``
+ - Map ``map(obj/array, iter => expr) -> obj/array``
+ - Chars ``chars(string) -> array``
+ - String ``string(array) -> string``
+ - Keys ``keys(obj) -> array``
+ - Values ``values(obj) -> array``
+ - Fold ``fold(obj/array, |iter, acc| => expr) -> literal``
+ - Sort ``sort(array, |x, y| => cond) -> array``
+ - Zip ``zip(array, array) -> array``
+ ### Filter
+ Takes an Object or Array iterates through and returns a new Object or Array with only elements matching the condition.
+  ##### Example Object
+ >Input
+```js
+{
+	a: filter({a: 1, b: 2, c: 3, d: 4}, i => ($i.val%2 == 0) || ($i.key == "a"))
+}
+```
+>Output
+```js
+{
+	a: {
+		a: 1
+		b: 2,
+		d: 4,
+	}
+}
+```
+ ##### Example Array
+ >Input
+```js
+{
+	a: filter([0,1,2,3,4,5], i => $i%2 == 0)
+}
+```
+>Output
+```js
+{
+	a: [0,2,4]
+}
+```
+ ### Map
+ Takes an Object or Array iterates through and returns a new Object or Array with elements modified by the expression
+  ##### Example Object
+ >Input
+```js
+{
+	a: map({a: 1, b: 2, c: 3, d: 4}, i => $i + 1)
+}
+```
+>Output
+```js
+{
+	a: {
+		a: 2
+		b: 3,
+		c: 4
+		d: 5,
+	}
+}
+```
+ ##### Example Array
+ >Input
+```js
+{
+	a: map([0,1,2,3,4,5], i => $i+1)
+}
+```
+>Output
+```js
+{
+	a: [
+		1,
+		2,
+		3,
+		4,
+		5
+	]
+}
+```
+ ### Chars
+ Takes a string and returns an Array of chars.
+  ##### Example
+ >Input
+```js
+{
+	a: chars("Hello")
+}
+```
+>Output
+```js
+{
+	a: [
+		H,
+		e,
+		l,
+		l,
+		o
+	]
+}
+```
+ ### Chars
+ Takes an Array of chars and returns a string.
+  ##### Example
+ >Input
+```js
+{
+	a: string(["H", "e", "l", "l", "o"])
+}
+```
+>Output
+```js
+{
+	a: Hello
+}
+```
+ ### Keys
+ Takes an Object and returns and Array of keys.
+  ##### Example
+ >Input
+```js
+{
+	a: keys({a: 1, b: 2, c: 3}}
+}
+```
+>Output
+```js
+{
+	a: [
+		a,
+		b,
+		c
+	]
+}
+```
+ ### Values
+ Takes an Object and returns and Array of keys.
+  ##### Example
+ >Input
+```js
+{
+	a: values({a: 1, b: 2, c: 3}}
+}
+```
+>Output
+```js
+{
+	a: [
+		1,
+		2,
+		3
+	]
+}
+```
+ ### Fold
+ Takes an Object or Array and iterates through it while giving you access to an accumulator reference that it returns. The accumulator is initialized as ``Nil``.
+  ##### Example Object
+ >Input
+```js
+{
+	a: fold({a: 1, b: 2, c: 3}, |i, acc| => $acc + $i.key + "=" + $i.val + " ")
+}
+```
+>Output
+```js
+{
+	a: a=1 b=2 c=3  
+}
+```
+ ##### Example Array
+ >Input
+```js
+{
+	a: fold([1,2,3,4,5], |i, acc| => $acc + $i)
+}
+```
+>Output
+```js
+{
+	a: 15
+}
+```
+ ### Sort
+ Takes an Array and returns an Array sorted. If you try to sort Arrays with differing types then you will most likely get an error ``
+Error Parsing -> "Invalid comparison of types."
+``
+##### Example Array with Numbers
+ >Input
+```js
+{
+	a: sort([200, 30, 500, 5, 60], |x, y| => $x < $y)
+}
+```
+>Output
+```js
+{
+	a: [
+		5,
+		30,
+		60,
+		200,
+		500
+	]
+}
+```
+##### Example Array with Strings
+ >Input
+```js
+{
+	a: sort(["Cucumber", "Broccoli", "Apple", "Banana", "Peach"], |x, y| => $x < $y)
+}
+```
+>Output
+```js
+{
+	a: [
+		Apple,
+		Banana,
+		Broccoli,
+		Cucumber,
+		Peach
+	]
+}
+```
+ ### Zip
+ Takes two Arrays and returns a new Array with elements of same index in sub-arrays.
+``
+##### Example
+ >Input
+```js
+{
+	a: zip([1,2,3], [4,5,6])
+}
+```
+>Output
+```js
+{
+	a: [
+		[
+			1,
+			4
+		],
+		[
+			2,
+			5
+		],
+		[
+			3,
+			6
+		]
+	]
+}
+```
+##### Example
+ >Input
+```js
+{
+	a: {
+		aa: 1,
+		bb: 2,
+		cc: 3
+	},
+	b: zip(keys($a), values($a))
+}
+```
+>Output
+```js
+{
+	a: {
+		aa: 1,
+		bb: 2,
+		cc: 3
+	},
+	b: [
+		[
+			aa,
+			1
+		],
+		[
+			bb,
+			2
+		],
+		[
+			cc,
+			3
+		]
+	]
+}
+```
+## Macros
+Macros are C-styled and like References must be declared before calling.
+### Syntax
+```js
+identifier(args, ...) token_stream \
+token_stream_on_newline
+```
+##### Example 1
+>Input
+```js
+{
+	@person(name, age) name: age
+	a: {
+		@person("Dave", 20),
+		@person("Mickey", 25),
+		@person("Suzie", 23),
+		@person("Keli", 28)
+	}
+}
+```
+>Output
+```js
+{
+	a: {
+		Dave: 20,
+		Mickey: 25,
+		Suzie: 23,
+		Keli: 28
+	}
+}
+```
+##### Example 2
+>Input
+```js
+{
+   	@person(id, name, age) \
+   	id: {\
+       	name: age\
+   	}
+   	a: {
+   		@person("1", "Dave", 20),
+   		@person("2", "Mickey", 25),
+   		@person("3", "Suzie", 23),
+   		@person("4", "Keli", 28)
+   	}
+}
+```
+>Output
+```js
+{
+	a: {
+		1: {
+			Dave: 20
+		},
+		2: {
+			Mickey: 25
+		},
+		3: {
+			Suzie: 23
+		},
+		4: {
+			Keli: 28
+		}
+	}
+}
+```
+##### Example 3
+>Input
+```js
+{
+   	@sort_descending(obj) sort(obj, |x, y| => $x > $y)
+   	a: [1,3,0,5],
+   	b: @sort_descending($a)
+}
+```
+>Output
+```js
+{
+	a: [
+		1,
+		3,
+		0,
+		5
+	],
+	b: [
+		5,
+		3,
+		1,
+		0
+	]
+}
+```
+##### Example 4
+>Input
+```js
+{
+   	@is_even(x) (x%2 == 0) 
+   	a: @is_even(2),
+   	b: @is_even(3),
+   	c: @is_even(7)
+}
+```
+>Output
+```js
+{
+	a: true,
+	b: false,
+	c: false
 }
 ```
