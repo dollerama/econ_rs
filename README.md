@@ -105,16 +105,26 @@ nil
 	d: Hi_Im_also_a_string
 }
 ```
-
+## Keywords
+ - ``or``
+ - ``and``
+ - ``not``
+ - ``true``
+ - ``false``
+ - ``nil``
+ - functions
 ## Operators
 **Econ** supports
  - Arithmetic ``+``, ``-``, ``*``, ``/``, ``%``
  - Logic ``or``/``||``, ``and``/``&&``, ``not``/``~``
  - Comparison ``>``, ``>=``, ``<``, ``<=``, ``==``, ``~=``
+ - Grouping ``()``
  - Ternary ``?:`` - ``condition ? expr if true : expr if false``
  - Access ``[index/key]``, ``.index/key``
  - Length ``#``
  - Comment ``//``
+ - Reference ``$``/``!``
+ - Macro ``@``
  #### Arithmetic
  **Econ** will do its best to perform arithmetic on types but will not make large leaps. For example: ``"Hello" + " " + "World"`` will yield ``"Hello World"`` or ``"The Number Two ->" + 2`` will yield ``"The Number Two -> 2"`` but ``true + 2`` will throw and error ``
 Error Parsing -> "Invalid addition of types."
