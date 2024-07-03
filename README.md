@@ -315,7 +315,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 ## Functions
 **Econ** supports a set amount of predefined functions; they include:
 
- - Filter ``filter(obj/array, iter => condition) -> obj/array``
+ - [Filter](#Filter) ``filter(obj/array, iter => condition) -> obj/array``
  - Map ``map(obj/array, iter => expr) -> obj/array``
  - Chars ``chars(string) -> array``
  - String ``string(array) -> string``
