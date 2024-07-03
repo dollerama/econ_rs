@@ -126,7 +126,7 @@ nil
  - Reference ``$``/``!``
  - Macro ``@``
  #### Arithmetic
- **Econ** will do its best to perform arithmetic on types but will not make large leaps. For example: ``"Hello" + " " + "World"`` will yield ``"Hello World"`` or ``"The Number Two ->" + 2`` will yield ``"The Number Two -> 2"`` but ``true + 2`` will throw and error ``
+ **Econ** will do its best to perform arithmetic on types but will not make large leaps. For example: ``"Hello" + " " + "World"`` will yield ``"Hello World"`` or ``"The Number Two ->" + 2`` will yield ``"The Number Two -> 2"`` but ``true + 2`` will throw an error ``
 Error Parsing -> "Invalid addition of types."
 ``
 
