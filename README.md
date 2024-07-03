@@ -260,7 +260,7 @@ Gets the length of an Object or Array.
 
 ## References
 In **Econ** you can reference keys using the ``$`` or  ``!`` operators. You cannot reference a key before it is declared.
-### ``$ ``operator 
+### ``$`` operator 
 Referenced keys must not contain whitespace or any other reserved operators. References are searched for in the current object depth but you may search up in depth by chaining together ``$``'s. If a key is not found it will return ``Nil``
 
 >Input
