@@ -68,7 +68,7 @@ mod tests {
                 @person(Lisa, 32, 120)
             },
             average_salary: fold($people, |x, acc| => $acc + $x.val.salary) / #$people,
-            people_above_average: sort(keys(filter($people, x => $x.val.salary > $average_salary)), |a, b| => $a > $b)
+            people_above_average: sort(keys(filter($people, x => $x.val.salary > $average_salary)), |a, b| => !a > !b)
         }
         "#, true);
 

@@ -173,11 +173,13 @@ impl JsonParser {
                             JsonValue::Bool(*n1 < *n2)
                         }
                         (JsonValue::Str(n1), JsonValue::Str(n2)) => {
-                            let mut  res: bool = true;
+                            let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = c2 as u32 - 48 > c as u32 - 48;
-                                    break;
+                                    res = c2 as u32 - 48 < c as u32 - 48;
+                                    if res == true {
+                                        break;
+                                    }
                                 } else {
                                     break;
                                 }
@@ -196,11 +198,13 @@ impl JsonParser {
                             JsonValue::Bool(*n1 > *n2)
                         }
                         (JsonValue::Str(n1), JsonValue::Str(n2)) => {
-                            let mut  res: bool = true;
+                            let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = (c2 as u32 - 48) < c as u32 - 48;
-                                    break;
+                                    res = (c2 as u32 - 48) > c as u32 - 48;
+                                    if res == true {
+                                        break;
+                                    }
                                 } else {
                                     break;
                                 }
@@ -219,11 +223,13 @@ impl JsonParser {
                             JsonValue::Bool(*n1 >= *n2)
                         }
                         (JsonValue::Str(n1), JsonValue::Str(n2)) => {
-                            let mut  res: bool = true;
+                            let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = (c2 as u32 - 48) < c as u32 - 48;
-                                    break;
+                                    res = (c2 as u32 - 48) >= c as u32 - 48;
+                                    if res == true {
+                                        break;
+                                    }
                                 } else {
                                     break;
                                 }
@@ -242,11 +248,13 @@ impl JsonParser {
                             JsonValue::Bool(*n1 <= *n2)
                         }
                         (JsonValue::Str(n1), JsonValue::Str(n2)) => {
-                            let mut  res: bool = true;
+                            let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = c2 as u32 - 48 > c as u32 - 48;
-                                    break;
+                                    res = c2 as u32 - 48 <= c as u32 - 48;
+                                    if res == true {
+                                        break;
+                                    }
                                 } else {
                                     break;
                                 }
@@ -1080,23 +1088,58 @@ impl JsonParser {
                 if self.depth-v.0 < 0 {
                     Ok(JsonValue::Nil)
                 } else {
-                    let value = match self.locals[(self.depth-v.0) as usize].get(&v.1) {
-                        Some(JsonValue::Num(n)) => {
-                            Ok(JsonValue::Num(*n))
+                    let value = if v.0 >= 0 {
+                        match self.locals[(self.depth-v.0) as usize].get(&v.1) {
+                            Some(JsonValue::Num(n)) => {
+                                Ok(JsonValue::Num(*n))
+                            }
+                            Some(JsonValue::Str(s)) => {
+                                Ok(JsonValue::Str(s.to_string()))
+                            }
+                            Some(JsonValue::Bool(b)) => {
+                                Ok(JsonValue::Bool(*b))
+                            }
+                            Some(JsonValue::Obj(o)) => {
+                                Ok(JsonValue::Obj(o.clone()))
+                            }
+                            Some(JsonValue::Arr(a)) => {
+                                Ok(JsonValue::Arr(a.clone()))
+                            }
+                            _ => {
+                                Ok(JsonValue::Nil)
+                            }
                         }
-                        Some(JsonValue::Str(s)) => {
-                            Ok(JsonValue::Str(s.to_string()))
+                    } else {
+                        let mut res = None;
+                        for i in (0..=self.depth).rev() {
+                            res = match self.locals[i as usize].get(&v.1) {
+                                Some(JsonValue::Num(n)) => {
+                                    Some(JsonValue::Num(*n))
+                                }
+                                Some(JsonValue::Str(s)) => {
+                                    Some(JsonValue::Str(s.to_string()))
+                                }
+                                Some(JsonValue::Bool(b)) => {
+                                    Some(JsonValue::Bool(*b))
+                                }
+                                Some(JsonValue::Obj(o)) => {
+                                    Some(JsonValue::Obj(o.clone()))
+                                }
+                                Some(JsonValue::Arr(a)) => {
+                                    Some(JsonValue::Arr(a.clone()))
+                                }
+                                _ => {
+                                    None
+                                }
+                            };
+                            
+                            if res.is_some() {
+                                break;
+                            }
                         }
-                        Some(JsonValue::Bool(b)) => {
-                            Ok(JsonValue::Bool(*b))
-                        }
-                        Some(JsonValue::Obj(o)) => {
-                            Ok(JsonValue::Obj(o.clone()))
-                        }
-                        Some(JsonValue::Arr(a)) => {
-                            Ok(JsonValue::Arr(a.clone()))
-                        }
-                        _ => {
+                        if let Some(r) = res {
+                            Ok(r)
+                        } else {
                             Ok(JsonValue::Nil)
                         }
                     };
