@@ -416,7 +416,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 	]
 }
 ```
- ### Chars
+ ### String
  Takes an Array of chars and returns a string.
   ##### Example
  >Input
