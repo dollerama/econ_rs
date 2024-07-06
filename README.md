@@ -1,4 +1,4 @@
-# Econ 
+# Econ Spec
 
 > **E**xpression **C**onfig **N**otation
 
@@ -112,7 +112,7 @@ nil
  - ``true``
  - ``false``
  - ``nil``
- - functions
+ - [Functions](#Functions)
 ## Operators
 **Econ** supports
  - Arithmetic ``+``, ``-``, ``*``, ``/``, ``%``
@@ -713,4 +713,33 @@ token_stream_on_newline
 	b: false,
 	c: false
 }
+```
+# Econ Rust Api
+The proof-of-concept Api for **Econ** is written in *Rust*
+## Parse from string
+>Source
+```rust
+let obj = Json::from(
+r#"
+{
+    a: {
+        b: [
+            {
+                c: [1,2,3]
+            },
+            {
+                c: [4,5,6]
+            }
+        ]
+    }
+}
+"#);
+```
+## Reading from a file
+>Source
+```rust
+let obj = Json::from(
+	PathBuf::from_str("file.econ")
+	.expect("Invalid Path.")
+);
 ```
