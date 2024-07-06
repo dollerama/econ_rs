@@ -8,48 +8,52 @@
 **Econ**  can parse standard **Json** 
 ```js
 {
-	a: 10.50,
-	b: "Hello World!",
-	c: true,
-	d: nil,
-	e: {
-		a: "Hello World...Again!",
-		b: [
+	"a": 10.50,
+	"b": "Hello World!",
+	"c": true,
+	"d": nil,
+	"e": {
+		"a": "Hello World...Again!",
+		"b": [
 			{
-				aa: 20,
-				bb: false
+				"aa": 20,
+				"bb": false
 			},
 			{
-				aa: 30,
-				bb: true
+				"aa": 30,
+				"bb": true
 			}
 		]
 	},
-	f: [
+	"f": [
 		1,
 		2,
 		3,
 		4,
 		5
 	],
-	"Key with spaces": true
 }
 ```
->all keys are strings
 
 ## Literals
 ### Number
->numbers are represented by 64 bit floats
+numbers are represented by 64 bit floats
 ```js
 5
 25.75
 ```
 ### String
->strings not enclosed with ``"``'s must start with a letter but may contain special characters and digits after as long as they are not operators or keywords.
+strings not enclosed with ``"``'s must start with a letter but may contain special characters and digits after as long as they are not operators or keywords. 
 ```js
 "I'm a string with spaces"
 Im_a_string_without_spaces
 ```
+>Object keys are parsed as strings so the same rules apply to them as with string values.
+>```js
+>key_with_no_spaces: 1 //valid
+>"key with spaces": 2 //valid
+> another key containing spaces: 3 //not valid
+>```
 ### Boolean
 ```js
 true
@@ -62,11 +66,11 @@ nil
 ### Object
 ```js
 {
-	a: 1,
-	b: 2,
-	c: {
-		d: {
-			e: "nested"
+	"a": 1,
+	"b": 2,
+	"c": {
+		"d": {
+			"e": "nested"
 		}
 	}
 }
@@ -78,7 +82,7 @@ nil
 	true,
 	"Hello",
 	{
-		name: "Suzie"
+		"name": "Suzie"
 	},
 	nil
 ]
@@ -99,10 +103,10 @@ nil
 >Output
 ```js
 {
-	a: 10,
-	b: true,
-	c: Hello World!,
-	d: Hi_Im_also_a_string
+	"a": 10,
+	"b": true,
+	"c": "Hello World!",
+	"d": "Hi_Im_also_a_string"
 }
 ```
 ## Keywords
@@ -142,11 +146,11 @@ Error Parsing -> "Invalid addition of types."
 >Output
 ```js
 {
-	a: {
+	"a": {
 		a: 1,
 		b: 2
 	},
-	b: [
+	"b": [
 		1,
 		2,
 		3,
@@ -162,23 +166,23 @@ Logical operators are similar to other programming languages and you can use the
 >Input
 ```js
 {
-	a: false,
-	b: true,
-	c: $a && $b,
-	d: $a or $b,
-	e: not $d,
-	f: ~($c and $a) or $e
+	"a": false,
+	"b": true,
+	"c": $a && $b,
+	"d": $a or $b,
+	"e": not $d,
+	"f": ~($c and $a) or $e
 }
 ```
 >Output
 ```js
 {
-	a: false,
-	b: true,
-	c: false,
-	d: true,
-	e: false,
-	f: true
+	"a": false,
+	"b": true,
+	"c": false,
+	"d": true,
+	"e": false,
+	"f": true
 }
 ```
 ### Comparison
@@ -197,13 +201,13 @@ Logical operators are similar to other programming languages and you can use the
 >Output
 ```js
 {
-	a: false
-	b: true,
-	c: true,
-	d: true,
-	e: false,
-	f: true,
-	g: true,
+	"a": false
+	"b": true,
+	"c": true,
+	"d": true,
+	"e": false,
+	"f": true,
+	"g": true,
 }
 ```
 ### Ternary
@@ -216,7 +220,7 @@ Logical operators are similar to other programming languages and you can use the
 >Output
 ```js
 {
-	a: 2
+	"a": 2
 }
 ```
 ### ``.``/``[]`` Access operator 
@@ -239,15 +243,15 @@ a: $arr.(1+1) //outputs -> 3
 >Output
 ```js
 {
-	a: [1,2,3,4,5],
-	a_1: 2,
-	a_0: 1,
-	a_4: 5
-	b: { 
-		name: Dill, 
-		age: 20 
+	"a": [1,2,3,4,5],
+	"a_1": 2,
+	"a_0": 1,
+	"a_4": 5
+	"b": { 
+		"name": "Dill", 
+		"age": 20 
 	},
-	c: Dill is 20 years old
+	"c": "Dill is 20 years old"
 }
 ```
 >Note: ``.(key/index)`` and ``[key/index]`` function the same essentially. 
@@ -278,11 +282,11 @@ Referenced keys must not contain whitespace or any other reserved operators. Ref
 >Output
 ```js
 {
-	a: 10,
-	b: 20,
-	c: {
-		ca: 30,
-		cb: nil
+	"a": 10,
+	"b": 20,
+	"c": {
+		"ca": 30,
+		"cb": nil
 	}
 }
 ```
@@ -304,11 +308,11 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: 10,
-	b: 20,
-	c: {
-		ca: 30,
-		cb: 10
+	"a": 10,
+	"b": 20,
+	"c": {
+		"ca": 30,
+		"cb": 10
 	}
 }
 ```
@@ -336,10 +340,10 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: {
-		a: 1
-		b: 2,
-		d: 4,
+	"a": {
+		"a": 1
+		"b": 2,
+		"d": 4,
 	}
 }
 ```
@@ -353,7 +357,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: [0,2,4]
+	"a": [0,2,4]
 }
 ```
  ### Map
@@ -368,11 +372,11 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: {
-		a: 2
-		b: 3,
-		c: 4
-		d: 5,
+	"a": {
+		"a": 2
+		"b": 3,
+		"c": 4
+		"d": 5,
 	}
 }
 ```
@@ -386,7 +390,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: [
+	"a": [
 		1,
 		2,
 		3,
@@ -407,12 +411,12 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: [
-		H,
-		e,
-		l,
-		l,
-		o
+	"a": [
+		"H",
+		"e",
+		"l",
+		"l",
+		"o"
 	]
 }
 ```
@@ -428,7 +432,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: Hello
+	"a": "Hello"
 }
 ```
  ### Keys
@@ -443,10 +447,10 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: [
-		a,
-		b,
-		c
+	"a": [
+		"a",
+		"b",
+		"c"
 	]
 }
 ```
@@ -462,7 +466,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: [
+	"a": [
 		1,
 		2,
 		3
@@ -481,7 +485,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: a=1 b=2 c=3  
+	"a": "a=1 b=2 c=3"
 }
 ```
  ##### Example Array
@@ -494,7 +498,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Output
 ```js
 {
-	a: 15
+	"a": 15
 }
 ```
  ### Sort
@@ -511,7 +515,7 @@ Error Parsing -> "Invalid comparison of types."
 >Output
 ```js
 {
-	a: [
+	"a": [
 		5,
 		30,
 		60,
@@ -530,12 +534,12 @@ Error Parsing -> "Invalid comparison of types."
 >Output
 ```js
 {
-	a: [
-		Apple,
-		Banana,
-		Broccoli,
-		Cucumber,
-		Peach
+	"a": [
+		"Apple",
+		"Banana",
+		"Broccoli",
+		"Cucumber",
+		"Peach"
 	]
 }
 ```
@@ -552,7 +556,7 @@ Error Parsing -> "Invalid comparison of types."
 >Output
 ```js
 {
-	a: [
+	"a": [
 		[
 			1,
 			4
@@ -583,22 +587,22 @@ Error Parsing -> "Invalid comparison of types."
 >Output
 ```js
 {
-	a: {
-		aa: 1,
-		bb: 2,
-		cc: 3
+	"a": {
+		"aa": 1,
+		"bb": 2,
+		"cc": 3
 	},
-	b: [
+	"b": [
 		[
-			aa,
+			"aa",
 			1
 		],
 		[
-			bb,
+			"bb",
 			2
 		],
 		[
-			cc,
+			"cc",
 			3
 		]
 	]
@@ -627,11 +631,11 @@ token_stream_on_newline
 >Output
 ```js
 {
-	a: {
-		Dave: 20,
-		Mickey: 25,
-		Suzie: 23,
-		Keli: 28
+	"a": {
+		"Dave": 20,
+		"Mickey": 25,
+		"Suzie": 23,
+		"Keli": 28
 	}
 }
 ```
@@ -654,18 +658,18 @@ token_stream_on_newline
 >Output
 ```js
 {
-	a: {
-		1: {
-			Dave: 20
+	"a": {
+		"1": {
+			"Dave": 20
 		},
-		2: {
-			Mickey: 25
+		"2": {
+			"Mickey": 25
 		},
-		3: {
-			Suzie: 23
+		"3": {
+			"Suzie": 23
 		},
-		4: {
-			Keli: 28
+		"4": {
+			"Keli": 28
 		}
 	}
 }
@@ -682,13 +686,13 @@ token_stream_on_newline
 >Output
 ```js
 {
-	a: [
+	"a": [
 		1,
 		3,
 		0,
 		5
 	],
-	b: [
+	"b": [
 		5,
 		3,
 		1,
@@ -709,17 +713,30 @@ token_stream_on_newline
 >Output
 ```js
 {
-	a: true,
-	b: false,
-	c: false
+	"a": true,
+	"b": false,
+	"c": false
 }
 ```
 # Econ Rust Api
 The proof-of-concept Api for **Econ** is written in *Rust*
-## Parse from string
+## Create
+You can use the create function to parse either a file or string. Create can output debug info and will return ``Result<EconObj, String>`` where as ``Econ::from()`` will return an empty ``EconObj`` if it fails and will not output debug info. 
 >Source
 ```rust
-let obj = Json::from(
+let obj = Econ::create(
+r#"
+{
+    a: 1,
+    b: 2,
+    c: 3
+}
+"#, true);
+```
+## from string
+>Source
+```rust
+let obj = Econ::from(
 r#"
 {
     a: {
@@ -735,11 +752,8 @@ r#"
 }
 "#);
 ```
-## Reading from a file
+## from file path
 >Source
 ```rust
-let obj = Json::from(
-	PathBuf::from_str("file.econ")
-	.expect("Invalid Path.")
-);
+let obj = Econ::from("file.econ");
 ```
