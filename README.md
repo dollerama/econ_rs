@@ -2,7 +2,7 @@
 
 > **E**xpression **C**onfig **N**otation
 
-**Econ** is a superset of **Json** that adds the ability to compute and compose data using expressions. Rust Api info [here](#Econ Rust Api)
+**Econ** is a superset of **Json** that adds the ability to compute and compose data using expressions. Rust Api info [here](#Econ-Rust-Api)
 
 ## Json
 **Econ**  can parse standard **Json** 
