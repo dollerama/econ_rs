@@ -1,34 +1,37 @@
 use std::{collections::HashMap, fmt};
 
-use crate::value::JsonValue;
+use crate::value::EconValue;
 
-#[derive(Debug, Clone)]
-pub struct JsonObj {
-    pub data: HashMap<String, JsonValue>
+pub trait Access<T> {
+    fn get(&self, i: T) -> &EconValue;
+    fn get_mut(&mut self, i: T) -> Option<&mut EconValue>;
 }
 
-impl fmt::Display for JsonObj {
+#[derive(Debug, Clone)]
+pub struct EconObj {
+    pub data: HashMap<String, EconValue>
+}
+
+impl fmt::Display for EconObj {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.get_string_from_obj(self, 0))
     }
 }
 
-impl JsonObj {
+impl EconObj {
+    const NIL: EconValue = EconValue::Nil;
+
     pub fn new() -> Self {
         Self {
             data: HashMap::new()
         }
     }
-    
-    pub fn key(&self, key: &str) -> Option<&JsonValue> {
-        self.data.get(key)
+
+    pub fn stringify(&self) -> String {
+        format!("{}", self)
     }
-    
-    pub fn key_mut(&mut self, key: &str) -> Option<&mut JsonValue> {
-        self.data.get_mut(key)
-    }
-    
-    pub fn get_string_from_arr(&self, arr: &Vec<JsonValue>, depth: usize) -> String {
+
+    pub fn get_string_from_arr(&self, arr: &Vec<EconValue>, depth: usize) -> String {
         let mut result = String::new();
         let mut i = 0;
     
@@ -36,7 +39,7 @@ impl JsonObj {
             for _ in 0..depth+1 {
                 result.push_str("\t");
             }
-            if let JsonValue::Arr(a) = v {
+            if let EconValue::Arr(a) = v {
                 result.push_str(&format!("[\n"));
 
                 if i+1 < arr.len() {
@@ -46,35 +49,35 @@ impl JsonObj {
                 }            
             } else {
                 match v {
-                    JsonValue::Bool(b) => {
+                    EconValue::Bool(b) => {
                         if i+1 < arr.len() {
                             result.push_str(&format!("{},\n", b));
                         } else {
                             result.push_str(&format!("{}\n", b));
                         }
                     }
-                    JsonValue::Num(n) => {
+                    EconValue::Num(n) => {
                         if i+1 < arr.len() {
                             result.push_str(&format!("{},\n", n));
                         } else {
                             result.push_str(&format!("{}\n", n));
                         }
                     }
-                    JsonValue::Str(s) => {
+                    EconValue::Str(s) => {
                         if i+1 < arr.len() {
-                            result.push_str(&format!("{},\n", s));
+                            result.push_str(&format!("\"{}\",\n", s));
                         } else {
-                            result.push_str(&format!("{}\n", s));
+                            result.push_str(&format!("\"{}\"\n", s));
                         }
                     }
-                    JsonValue::Nil => {
+                    EconValue::Nil => {
                         if i+1 < arr.len() {
                             result.push_str(&format!("nil,\n"));
                         } else {
                             result.push_str(&format!("nil\n"));
                         }
                     }
-                    JsonValue::Obj(o) => {
+                    EconValue::Obj(o) => {
                         if i+1 < arr.len() {
                             result.push_str(&format!("{},\n", &self.get_string_from_obj(&o, depth+1)));
                         } else {
@@ -95,7 +98,7 @@ impl JsonObj {
         result
     }
         
-    pub fn get_string_from_obj(&self, obj: &JsonObj, depth: usize) -> String {
+    pub fn get_string_from_obj(&self, obj: &EconObj, depth: usize) -> String {
         let mut result = String::new();
         let mut i = 0;
         
@@ -105,8 +108,8 @@ impl JsonObj {
             for _ in 0..depth+1 {
                 result.push_str("\t");
             }
-            if let JsonValue::Obj(o) = v {
-                result.push_str(&format!("{}: ", k));
+            if let EconValue::Obj(o) = v {
+                result.push_str(&format!("\"{}\": ", k));
                 
                 result.push_str(&self.get_string_from_obj(&o, depth+1));
                 
@@ -117,36 +120,36 @@ impl JsonObj {
                 }
             } else {
                 match v {
-                    JsonValue::Bool(b) => {
+                    EconValue::Bool(b) => {
                         if i+1 < obj.data.keys().len() {
-                            result.push_str(&format!("{}: {},\n", k, b));
+                            result.push_str(&format!("\"{}\": {},\n", k, b));
                         } else {
-                            result.push_str(&format!("{}: {}\n", k, b));
+                            result.push_str(&format!("\"{}\": {}\n", k, b));
                         }
                     }
-                    JsonValue::Num(n) => {
+                    EconValue::Num(n) => {
                         if i+1 < obj.data.keys().len() {
-                            result.push_str(&format!("{}: {},\n", k, n));
+                            result.push_str(&format!("\"{}\": {},\n", k, n));
                         } else {
-                            result.push_str(&format!("{}: {}\n", k, n));
+                            result.push_str(&format!("\"{}\": {}\n", k, n));
                         }
                     }
-                    JsonValue::Str(s) => {
+                    EconValue::Str(s) => {
                         if i+1 < obj.data.keys().len() {
-                            result.push_str(&format!("{}: {},\n", k, s));
+                            result.push_str(&format!("\"{}\": \"{}\",\n", k, s));
                         } else {
-                            result.push_str(&format!("{}: {}\n", k, s));
+                            result.push_str(&format!("\"{}\": \"{}\"\n", k, s));
                         }
                     }
-                    JsonValue::Nil => {
+                    EconValue::Nil => {
                         if i+1 < obj.data.keys().len() {
-                            result.push_str(&format!("{}: nil,\n", k));
+                            result.push_str(&format!("\"{}\": nil,\n", k));
                         } else {
-                            result.push_str(&format!("{}: nil\n", k));
+                            result.push_str(&format!("\"{}\": nil\n", k));
                         }
                     }
-                    JsonValue::Arr(a) => {
-                        result.push_str(&format!("{}: [\n", k));
+                    EconValue::Arr(a) => {
+                        result.push_str(&format!("\"{}\": [\n", k));
                         result.push_str(&self.get_string_from_arr(&a, depth+1));
                         if i+1 < obj.data.keys().len() {
                             result.push_str(",\n");
@@ -166,5 +169,18 @@ impl JsonObj {
         result.push_str(&format!("}}"));
         
         result
+    }
+}
+
+impl Access<&str> for EconObj {
+    fn get(&self, key: &str) -> &EconValue {
+        match self.data.get(key) {
+            Some(v) => v,
+            None => &Self::NIL
+        }
+    }
+    
+    fn get_mut(&mut self, key: &str) -> Option<&mut EconValue> {
+        self.data.get_mut(key)
     }
 }

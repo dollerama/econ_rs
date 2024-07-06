@@ -1,16 +1,16 @@
 use std::{collections::HashMap, time::Instant};
 
-use crate::{json_data::Json, lexer::{Function, JsonLexer, Token, TokenData}, object::JsonObj, value::JsonValue};
+use crate::{lexer::{Function, EconLexer, Token, TokenData}, object::EconObj, value::EconValue};
 
-pub struct JsonParser { 
+pub struct EconParser { 
     tokens: Vec<TokenData>,
     current: usize,
     source: String,
-    locals: Vec<HashMap<String, JsonValue>>,
+    locals: Vec<HashMap<String, EconValue>>,
     depth: isize
 }
 
-impl JsonParser {
+impl EconParser {
     pub fn new(src: &str) -> Self {
         Self {
             tokens: vec!(),
@@ -97,7 +97,7 @@ impl JsonParser {
         }
     }
     
-    fn equality(&mut self) -> Result<JsonValue, String> {
+    fn equality(&mut self) -> Result<EconValue, String> {
         let mut left = self.comparison()?;
         
         loop {
@@ -107,14 +107,14 @@ impl JsonParser {
                     let right = self.comparison()?;
 
                     left = match (&left, &right) {
-                        (&JsonValue::Num(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Bool(n1==n2)
+                        (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Bool(n1==n2)
                         }
-                        (&JsonValue::Bool(ref n1), &JsonValue::Bool(ref n2)) => {
-                            JsonValue::Bool(n1==n2)
+                        (&EconValue::Bool(ref n1), &EconValue::Bool(ref n2)) => {
+                            EconValue::Bool(n1==n2)
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Str(ref n2)) => {
-                            JsonValue::Bool(n1==n2)
+                        (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) => {
+                            EconValue::Bool(n1==n2)
                         }
                         _ => return self.error("Invalid comparison of types".to_string())
                     };
@@ -124,14 +124,14 @@ impl JsonParser {
                     let right = self.comparison()?;
                     
                     left = match (&left, &right) {
-                        (&JsonValue::Num(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Bool(n1!=n2)
+                        (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Bool(n1!=n2)
                         }
-                        (&JsonValue::Bool(ref n1), &JsonValue::Bool(ref n2)) => {
-                            JsonValue::Bool(n1!=n2)
+                        (&EconValue::Bool(ref n1), &EconValue::Bool(ref n2)) => {
+                            EconValue::Bool(n1!=n2)
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Str(ref n2)) => {
-                            JsonValue::Bool(n1!=n2)
+                        (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) => {
+                            EconValue::Bool(n1!=n2)
                         }
                         _ => return self.error("Invalid comparison of types.".to_string())
                     };
@@ -143,10 +143,10 @@ impl JsonParser {
                     let right2 = self.equality()?;
                     
                     left = match &left {
-                        &JsonValue::Bool(true) => {
+                        &EconValue::Bool(true) => {
                             right1
                         }
-                        &JsonValue::Bool(false) => {
+                        &EconValue::Bool(false) => {
                             right2
                         }
                         _ => return self.error("Expected Bool from ?.".to_string())
@@ -159,7 +159,7 @@ impl JsonParser {
         Ok(left)
     }
     
-    fn comparison(&mut self) -> Result<JsonValue, String> {
+    fn comparison(&mut self) -> Result<EconValue, String> {
         let mut left = self.term()?;
         
         loop {
@@ -169,10 +169,10 @@ impl JsonParser {
                     let right = self.term()?;
                     
                     left = match (&left, &right) {
-                        (JsonValue::Num(n1), JsonValue::Num(n2)) => {
-                            JsonValue::Bool(*n1 < *n2)
+                        (EconValue::Num(n1), EconValue::Num(n2)) => {
+                            EconValue::Bool(*n1 < *n2)
                         }
-                        (JsonValue::Str(n1), JsonValue::Str(n2)) => {
+                        (EconValue::Str(n1), EconValue::Str(n2)) => {
                             let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
@@ -185,7 +185,7 @@ impl JsonParser {
                                 }
                             }
                         
-                            JsonValue::Bool(res)
+                            EconValue::Bool(res)
                         }
                         _ => return self.error("Invalid comparison of types.".to_string())
                     };
@@ -194,10 +194,10 @@ impl JsonParser {
                     self.eat();
                     let right = self.term()?;
                     left = match (&left, &right) {
-                        (JsonValue::Num(n1), JsonValue::Num(n2)) => {
-                            JsonValue::Bool(*n1 > *n2)
+                        (EconValue::Num(n1), EconValue::Num(n2)) => {
+                            EconValue::Bool(*n1 > *n2)
                         }
-                        (JsonValue::Str(n1), JsonValue::Str(n2)) => {
+                        (EconValue::Str(n1), EconValue::Str(n2)) => {
                             let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
@@ -210,7 +210,7 @@ impl JsonParser {
                                 }
                             }
                         
-                            JsonValue::Bool(res)
+                            EconValue::Bool(res)
                         }
                         _ => return self.error("Invalid comparison of types.".to_string())
                     };
@@ -219,10 +219,10 @@ impl JsonParser {
                     self.eat();
                     let right = self.term()?;
                     left = match (&left, &right) {
-                        (JsonValue::Num(n1), JsonValue::Num(n2)) => {
-                            JsonValue::Bool(*n1 >= *n2)
+                        (EconValue::Num(n1), EconValue::Num(n2)) => {
+                            EconValue::Bool(*n1 >= *n2)
                         }
-                        (JsonValue::Str(n1), JsonValue::Str(n2)) => {
+                        (EconValue::Str(n1), EconValue::Str(n2)) => {
                             let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
@@ -235,7 +235,7 @@ impl JsonParser {
                                 }
                             }
                         
-                            JsonValue::Bool(res)
+                            EconValue::Bool(res)
                         }
                         _ => return self.error("Invalid comparison of types.".to_string())
                     };
@@ -244,10 +244,10 @@ impl JsonParser {
                     self.eat();
                     let right = self.term()?;
                     left = match (&left, &right) {
-                        (JsonValue::Num(n1), JsonValue::Num(n2)) => {
-                            JsonValue::Bool(*n1 <= *n2)
+                        (EconValue::Num(n1), EconValue::Num(n2)) => {
+                            EconValue::Bool(*n1 <= *n2)
                         }
-                        (JsonValue::Str(n1), JsonValue::Str(n2)) => {
+                        (EconValue::Str(n1), EconValue::Str(n2)) => {
                             let mut  res: bool = false;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
@@ -260,7 +260,7 @@ impl JsonParser {
                                 }
                             }
                         
-                            JsonValue::Bool(res)
+                            EconValue::Bool(res)
                         }
                         _ => return self.error("Invalid comparison of types.".to_string())
                     };
@@ -268,15 +268,15 @@ impl JsonParser {
                 Token::And => {
                     self.eat();
                     let right = self.term()?;
-                    if let (JsonValue::Bool(n1), JsonValue::Bool(n2)) = (&left, right) {
-                        left = JsonValue::Bool(*n1 && n2);
+                    if let (EconValue::Bool(n1), EconValue::Bool(n2)) = (&left, right) {
+                        left = EconValue::Bool(*n1 && n2);
                     } 
                 }
                 Token::Or => {
                     self.eat();
                     let right = self.term()?;
-                    if let (JsonValue::Bool(n1), JsonValue::Bool(n2)) = (&left, right) {
-                        left = JsonValue::Bool(*n1 || n2);
+                    if let (EconValue::Bool(n1), EconValue::Bool(n2)) = (&left, right) {
+                        left = EconValue::Bool(*n1 || n2);
                     } 
                 }
                 _ => { break; }
@@ -286,7 +286,7 @@ impl JsonParser {
         Ok(left)
     }
     
-    fn term(&mut self) -> Result<JsonValue, String> {
+    fn term(&mut self) -> Result<EconValue, String> {
         let mut left = self.factor()?;
         
         loop {
@@ -296,37 +296,37 @@ impl JsonParser {
                     let right = self.factor()?;
                     
                     left = match (&left, &right) {
-                        (&JsonValue::Num(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Num(n1+n2)
+                        (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Num(n1+n2)
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Str(ref n2)) =>  {
-                            JsonValue::Str(format!("{}{}", n1, n2))
+                        (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) =>  {
+                            EconValue::Str(format!("{}{}", n1, n2))
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Str(format!("{}{}", n1, n2))
+                        (&EconValue::Str(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Str(format!("{}{}", n1, n2))
                         }
-                        (&JsonValue::Num(ref n1), &JsonValue::Str(ref n2)) =>  {
-                            JsonValue::Str(format!("{}{}", n1, n2))
+                        (&EconValue::Num(ref n1), &EconValue::Str(ref n2)) =>  {
+                            EconValue::Str(format!("{}{}", n1, n2))
                         }
-                        (&JsonValue::Num(ref n1), &JsonValue::Nil) =>  {
-                            JsonValue::Num(*n1)
+                        (&EconValue::Num(ref n1), &EconValue::Nil) =>  {
+                            EconValue::Num(*n1)
                         }
-                        (&JsonValue::Nil, &JsonValue::Num(ref n1)) =>  {
-                            JsonValue::Num(*n1)
+                        (&EconValue::Nil, &EconValue::Num(ref n1)) =>  {
+                            EconValue::Num(*n1)
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Nil) =>  {
-                            JsonValue::Str(format!("{}", n1))
+                        (&EconValue::Str(ref n1), &EconValue::Nil) =>  {
+                            EconValue::Str(format!("{}", n1))
                         }
-                        (&JsonValue::Nil, &JsonValue::Str(ref n1)) =>  {
-                            JsonValue::Str(format!("{}", n1))
+                        (&EconValue::Nil, &EconValue::Str(ref n1)) =>  {
+                            EconValue::Str(format!("{}", n1))
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Bool(ref n2)) =>  {
-                            JsonValue::Str(format!("{}{}", n1, n2))
+                        (&EconValue::Str(ref n1), &EconValue::Bool(ref n2)) =>  {
+                            EconValue::Str(format!("{}{}", n1, n2))
                         }
-                        (&JsonValue::Bool(ref n1), &JsonValue::Str(ref n2)) =>  {
-                            JsonValue::Str(format!("{}{}", n1, n2))
+                        (&EconValue::Bool(ref n1), &EconValue::Str(ref n2)) =>  {
+                            EconValue::Str(format!("{}{}", n1, n2))
                         }
-                        (&JsonValue::Arr(ref n1), &JsonValue::Arr(ref n2)) =>  {
+                        (&EconValue::Arr(ref n1), &EconValue::Arr(ref n2)) =>  {
                             let mut new_arr = vec!();
                             
                             for a in n1 {
@@ -336,28 +336,28 @@ impl JsonParser {
                                 new_arr.push(a.clone());
                             }
 
-                            JsonValue::Arr(new_arr)
+                            EconValue::Arr(new_arr)
                         }
-                        (&JsonValue::Arr(ref n1), &JsonValue::Nil) =>  {
+                        (&EconValue::Arr(ref n1), &EconValue::Nil) =>  {
                             let mut new_arr = vec!();
                             
                             for a in n1 {
                                 new_arr.push(a.clone());
                             }
 
-                            JsonValue::Arr(new_arr)
+                            EconValue::Arr(new_arr)
                         }
-                        (&JsonValue::Nil, &JsonValue::Arr(ref n1)) =>  {
+                        (&EconValue::Nil, &EconValue::Arr(ref n1)) =>  {
                             let mut new_arr = vec!();
                             
                             for a in n1 {
                                 new_arr.push(a.clone());
                             }
 
-                            JsonValue::Arr(new_arr)
+                            EconValue::Arr(new_arr)
                         }
-                        (&JsonValue::Obj(ref n1), &JsonValue::Obj(ref n2)) =>  {
-                            let mut new_obj = JsonObj::new();
+                        (&EconValue::Obj(ref n1), &EconValue::Obj(ref n2)) =>  {
+                            let mut new_obj = EconObj::new();
                             
                             for (k, v) in &n1.data {
                                 new_obj.data.insert(k.clone(), v.clone());
@@ -366,25 +366,25 @@ impl JsonParser {
                                 new_obj.data.insert(k.clone(), v.clone());
                             }
 
-                            JsonValue::Obj(new_obj)
+                            EconValue::Obj(new_obj)
                         }
-                        (&JsonValue::Obj(ref n1), &JsonValue::Nil) =>  {
-                            let mut new_obj = JsonObj::new();
+                        (&EconValue::Obj(ref n1), &EconValue::Nil) =>  {
+                            let mut new_obj = EconObj::new();
                             
                             for (k, v) in &n1.data {
                                 new_obj.data.insert(k.clone(), v.clone());
                             }
                             
-                            JsonValue::Obj(new_obj)
+                            EconValue::Obj(new_obj)
                         }
-                        (&JsonValue::Nil, &JsonValue::Obj(ref n1)) =>  {
-                            let mut new_obj = JsonObj::new();
+                        (&EconValue::Nil, &EconValue::Obj(ref n1)) =>  {
+                            let mut new_obj = EconObj::new();
                             
                             for (k, v) in &n1.data {
                                 new_obj.data.insert(k.clone(), v.clone());
                             }
                             
-                            JsonValue::Obj(new_obj)
+                            EconValue::Obj(new_obj)
                         }
                         _ => return self.error("Invalid addition of types.".to_string())
                     };
@@ -394,26 +394,26 @@ impl JsonParser {
                     let right = self.factor()?;
                     
                     left = match (&left, &right) {
-                        (&JsonValue::Str(ref n1), &JsonValue::Str(ref n2)) =>  {
-                            JsonValue::Str(format!("{}\n{}", n1, n2))
+                        (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) =>  {
+                            EconValue::Str(format!("{}\n{}", n1, n2))
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Str(format!("{}\n{}", n1, n2))
+                        (&EconValue::Str(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Str(format!("{}\n{}", n1, n2))
                         }
-                        (&JsonValue::Num(ref n1), &JsonValue::Str(ref n2)) =>  {
-                            JsonValue::Str(format!("{}\n{}", n1, n2))
+                        (&EconValue::Num(ref n1), &EconValue::Str(ref n2)) =>  {
+                            EconValue::Str(format!("{}\n{}", n1, n2))
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Nil) =>  {
-                            JsonValue::Str(format!("{}", n1))
+                        (&EconValue::Str(ref n1), &EconValue::Nil) =>  {
+                            EconValue::Str(format!("{}", n1))
                         }
-                        (&JsonValue::Nil, &JsonValue::Str(ref n1)) =>  {
-                            JsonValue::Str(format!("{}", n1))
+                        (&EconValue::Nil, &EconValue::Str(ref n1)) =>  {
+                            EconValue::Str(format!("{}", n1))
                         }
-                        (&JsonValue::Str(ref n1), &JsonValue::Bool(ref n2)) =>  {
-                            JsonValue::Str(format!("{}\n{}", n1, n2))
+                        (&EconValue::Str(ref n1), &EconValue::Bool(ref n2)) =>  {
+                            EconValue::Str(format!("{}\n{}", n1, n2))
                         }
-                        (&JsonValue::Bool(ref n1), &JsonValue::Str(ref n2)) =>  {
-                            JsonValue::Str(format!("{}\n{}", n1, n2))
+                        (&EconValue::Bool(ref n1), &EconValue::Str(ref n2)) =>  {
+                            EconValue::Str(format!("{}\n{}", n1, n2))
                         }
                         _ => return self.error("Invalid concatenation of types.".to_string())
                     };
@@ -423,8 +423,8 @@ impl JsonParser {
                     let right = self.factor()?;
                     
                     left = match (&left, &right) {
-                        (&JsonValue::Num(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Num(n1-n2)
+                        (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Num(n1-n2)
                         }
                         _ => return self.error("Invalid subtraction of types.".to_string())
                     };
@@ -438,7 +438,7 @@ impl JsonParser {
         Ok(left)
     }
     
-    fn factor(&mut self) -> Result<JsonValue, String> {
+    fn factor(&mut self) -> Result<EconValue, String> {
         let mut left = self.unary()?;
         
         loop {
@@ -448,8 +448,8 @@ impl JsonParser {
                     let right = self.unary()?;
                     
                     left = match (&left, &right) {
-                        (&JsonValue::Num(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Num(n1*n2)
+                        (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Num(n1*n2)
                         }
                         _ => return self.error("Invalid multiplication of types.".to_string())
                     };
@@ -459,8 +459,8 @@ impl JsonParser {
                     let right = self.unary()?;
                     
                     left = match (&left, &right) {
-                        (&JsonValue::Num(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Num(n1/n2)
+                        (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Num(n1/n2)
                         }
                         _ => return self.error("Invalid division of types.".to_string())
                     };
@@ -470,8 +470,8 @@ impl JsonParser {
                     let right = self.unary()?;
                     
                     left = match (&left, &right) {
-                        (&JsonValue::Num(ref n1), &JsonValue::Num(ref n2)) =>  {
-                            JsonValue::Num(n1.rem_euclid(*n2))
+                        (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
+                            EconValue::Num(n1.rem_euclid(*n2))
                         }
                         _ => return self.error("Invalid modulus of types.".to_string())
                     };
@@ -485,13 +485,13 @@ impl JsonParser {
         Ok(left)
     }
     
-    fn unary(&mut self) -> Result<JsonValue, String> {
+    fn unary(&mut self) -> Result<EconValue, String> {
         match self.peek().clone() {
             Token::Minus => {
                 self.eat();
                 let right = self.unary()?;
-                if let JsonValue::Num(n1) = right {
-                    Ok(JsonValue::Num(-n1))
+                if let EconValue::Num(n1) = right {
+                    Ok(EconValue::Num(-n1))
                 } else {
                     Ok(right)
                 }
@@ -499,8 +499,8 @@ impl JsonParser {
             Token::Not => {
                 self.eat();
                 let right = self.unary()?;
-                if let JsonValue::Bool(b1) = right {
-                    Ok(JsonValue::Bool(!b1))
+                if let EconValue::Bool(b1) = right {
+                    Ok(EconValue::Bool(!b1))
                 } else {
                     Ok(right)
                 }
@@ -509,17 +509,17 @@ impl JsonParser {
                 self.eat();
                 let right = self.unary()?;
                 match &right {
-                    &JsonValue::Str(ref n1) => {
-                        Ok(JsonValue::Num(n1.chars().count() as f64))
+                    &EconValue::Str(ref n1) => {
+                        Ok(EconValue::Num(n1.chars().count() as f64))
                     }
-                    &JsonValue::Num(ref n1) => {
-                        Ok(JsonValue::Num(*n1))
+                    &EconValue::Num(ref n1) => {
+                        Ok(EconValue::Num(*n1))
                     }
-                    &JsonValue::Arr(ref n1) => {
-                        Ok(JsonValue::Num(n1.len() as f64))
+                    &EconValue::Arr(ref n1) => {
+                        Ok(EconValue::Num(n1.len() as f64))
                     }
-                    &JsonValue::Obj(ref n1) => {
-                        Ok(JsonValue::Num(n1.data.keys().len() as f64))
+                    &EconValue::Obj(ref n1) => {
+                        Ok(EconValue::Num(n1.data.keys().len() as f64))
                     }
                     _ => return self.error("Invalid measurement of type.".to_string())
                 }
@@ -530,13 +530,13 @@ impl JsonParser {
         }
     }
     
-    fn filter_impl(&mut self) -> Result<JsonValue, String> {
+    fn filter_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Function.".to_string())?;
         let right = self.val_expression()?;
         
         match right {
-            JsonValue::Arr(a) => {
+            EconValue::Arr(a) => {
                 self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
                 let temp_1 = self.create_temp_var()?;
@@ -544,17 +544,17 @@ impl JsonParser {
                 self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
                 let mut new_vec = vec!();
                 for (j, aa) in a.iter().enumerate() {
-                    if let JsonValue::Str(ref s) = &temp_1.0 {
+                    if let EconValue::Str(ref s) = &temp_1.0 {
                         self.locals[self.depth as usize].insert(s.clone(), aa.clone());
                     } 
                     let goto_point = self.current;
                     let condition = self.val_expression()?;
                     
                     match condition {
-                        JsonValue::Bool(true) => {
+                        EconValue::Bool(true) => {
                             new_vec.push(aa.clone());
                         }
-                        JsonValue::Bool(false) => { }
+                        EconValue::Bool(false) => { }
                         _ => {
                             return self.error("Filter condition must be boolean.".to_string());
                         }
@@ -567,32 +567,32 @@ impl JsonParser {
                 self.restore_temp_var(temp_1);
                 
                 self.consume(Token::RightParen, "Expect ')' after Function.".to_string())?; 
-                Ok(JsonValue::Arr(new_vec))
+                Ok(EconValue::Arr(new_vec))
             }
-            JsonValue::Obj(a) => {
+            EconValue::Obj(a) => {
                 self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
                 let temp_1 = self.create_temp_var()?;
                 
                 self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
-                let mut new_obj = JsonObj::new();
+                let mut new_obj = EconObj::new();
                 for (j, aa) in a.data.iter().enumerate() {
-                    if let JsonValue::Str(ref s) = &temp_1.0 {
-                        let mut key_val = JsonObj::new();
-                        key_val.data.insert("key".to_string(), JsonValue::Str(aa.0.clone()));
+                    if let EconValue::Str(ref s) = &temp_1.0 {
+                        let mut key_val = EconObj::new();
+                        key_val.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
                         key_val.data.insert("val".to_string(), aa.1.clone());
                         self.locals[self.depth as usize].insert(s.clone(), 
-                            JsonValue::Obj(key_val)
+                            EconValue::Obj(key_val)
                         );
                     } 
                     let goto_point = self.current;
                     let condition = self.val_expression()?;
                     
                     match condition {
-                        JsonValue::Bool(true) => {
+                        EconValue::Bool(true) => {
                             new_obj.data.insert(aa.0.clone(), aa.1.clone());
                         }
-                        JsonValue::Bool(false) => { }
+                        EconValue::Bool(false) => { }
                         _ => {
                             return self.error("Filter condition must be boolean.".to_string());
                         }
@@ -605,7 +605,7 @@ impl JsonParser {
                 self.restore_temp_var(temp_1);
                 
                 self.consume(Token::RightParen, "Expect ')' after Map Function.".to_string())?; 
-                Ok(JsonValue::Obj(new_obj))
+                Ok(EconValue::Obj(new_obj))
             }
             _ => {
                 return self.error("Invalid literal/variable in function arguments.".to_string());
@@ -613,83 +613,83 @@ impl JsonParser {
         }
     }
     
-    fn keys_impl(&mut self) -> Result<JsonValue, String> {
+    fn keys_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Keys Function.".to_string())?;
         let right = self.val_expression()?;
         
-        if let JsonValue::Obj(s) = right {
+        if let EconValue::Obj(s) = right {
             self.consume(Token::RightParen, "Expect ')' after Keys Function.".to_string())?; 
             let mut new_vec = vec!();
             for i in s.data.keys() {
-                new_vec.push(JsonValue::Str(i.to_string()));
+                new_vec.push(EconValue::Str(i.to_string()));
             }
-            Ok(JsonValue::Arr(new_vec))
+            Ok(EconValue::Arr(new_vec))
         } else {
             return self.error("Invalid literal/variable in Keys Function arguments.".to_string());
         }
     }
     
-    fn values_impl(&mut self) -> Result<JsonValue, String> {
+    fn values_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Keys Function.".to_string())?;
         let right = self.val_expression()?;
         
-        if let JsonValue::Obj(s) = right {
+        if let EconValue::Obj(s) = right {
             self.consume(Token::RightParen, "Expect ')' after Keys Function.".to_string())?; 
             let mut new_vec = vec!();
             for i in s.data.values() {
                 new_vec.push(i.clone());
             }
-            Ok(JsonValue::Arr(new_vec))
+            Ok(EconValue::Arr(new_vec))
         } else {
             return self.error("Invalid literal/variable in Keys Function arguments.".to_string());
         }
     }
     
-    fn chars_impl(&mut self) -> Result<JsonValue, String> {
+    fn chars_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Chars Function.".to_string())?;
         let right = self.val_expression()?;
         
-        if let JsonValue::Str(s) = right {
+        if let EconValue::Str(s) = right {
             self.consume(Token::RightParen, "Expect ')' after Chars Function.".to_string())?; 
             let mut new_vec = vec!();
             for i in s.chars() {
-                new_vec.push(JsonValue::Str(i.to_string()));
+                new_vec.push(EconValue::Str(i.to_string()));
             }
-            Ok(JsonValue::Arr(new_vec))
+            Ok(EconValue::Arr(new_vec))
         } else {
             return self.error("Invalid literal/variable in Chars Function arguments.".to_string());
         }
     }
     
-    fn string_impl(&mut self) -> Result<JsonValue, String> {
+    fn string_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after String Function.".to_string())?;
         let right = self.val_expression()?;
 
-        if let &JsonValue::Arr(ref a) = &right {
+        if let &EconValue::Arr(ref a) = &right {
             self.consume(Token::RightParen, "Expect ')' after String Function.".to_string())?; 
             let mut new_str = String::from("");
             for i in a {
-                if let JsonValue::Str(s) = i {
+                if let EconValue::Str(s) = i {
                     new_str.push_str(s);
                 }
             }
-            Ok(JsonValue::Str(new_str))
+            Ok(EconValue::Str(new_str))
         } else {
             return self.error("Invalid literal/variable in String Function arguments.".to_string());
         }
     }
     
-    fn map_impl(&mut self) -> Result<JsonValue, String> {
+    fn map_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Map Function.".to_string())?;
         let right = self.val_expression()?;
         
         match right {
-            JsonValue::Arr(a) => {
+            EconValue::Arr(a) => {
                 self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
                 let temp_1 = self.create_temp_var()?;
@@ -697,7 +697,7 @@ impl JsonParser {
                 self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
                 let mut new_vec = vec!();
                 for (j, aa) in a.iter().enumerate() {
-                    if let JsonValue::Str(ref s) = &temp_1.0 {
+                    if let EconValue::Str(ref s) = &temp_1.0 {
                         self.locals[self.depth as usize].insert(s.clone(), aa.clone());
                     } 
                     let goto_point = self.current;
@@ -713,22 +713,22 @@ impl JsonParser {
                 self.restore_temp_var(temp_1);
                 
                 self.consume(Token::RightParen, "Expect ')' after Map Function.".to_string())?; 
-                Ok(JsonValue::Arr(new_vec))
+                Ok(EconValue::Arr(new_vec))
             }
-            JsonValue::Obj(a) => {
+            EconValue::Obj(a) => {
                 self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
                 let temp_1 = self.create_temp_var()?;
                 
                 self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
-                let mut new_obj = JsonObj::new();
+                let mut new_obj = EconObj::new();
                 for (j, aa) in a.data.iter().enumerate() {
-                    if let JsonValue::Str(ref s) = &temp_1.0 {
-                        let mut key_val = JsonObj::new();
-                        key_val.data.insert("key".to_string(), JsonValue::Str(aa.0.clone()));
+                    if let EconValue::Str(ref s) = &temp_1.0 {
+                        let mut key_val = EconObj::new();
+                        key_val.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
                         key_val.data.insert("val".to_string(), aa.1.clone());
                         self.locals[self.depth as usize].insert(s.clone(), 
-                            JsonValue::Obj(key_val)
+                            EconValue::Obj(key_val)
                         );
                     } 
                     let goto_point = self.current;
@@ -744,7 +744,7 @@ impl JsonParser {
                 self.restore_temp_var(temp_1);
                 
                 self.consume(Token::RightParen, "Expect ')' after Map Function.".to_string())?; 
-                Ok(JsonValue::Obj(new_obj))
+                Ok(EconValue::Obj(new_obj))
             }
             _ => {
                 self.error("Invalid literal/variable in Map Function arguments.".to_string())
@@ -752,17 +752,17 @@ impl JsonParser {
         }
     }
     
-    fn create_temp_var(&mut self) -> Result<(JsonValue, Option<JsonValue>), String> {
+    fn create_temp_var(&mut self) -> Result<(EconValue, Option<EconValue>), String> {
         let i_name = self.val_expression()?;
         let cached_val;
                 
-        if let JsonValue::Str(ref s) = &i_name {
+        if let EconValue::Str(ref s) = &i_name {
             cached_val = if let Some(v) = self.locals[self.depth as usize].get(s) {
                 Some(v.clone())
             } else {
                 None
             };
-            self.locals[self.depth as usize].insert(s.clone(), JsonValue::Nil);
+            self.locals[self.depth as usize].insert(s.clone(), EconValue::Nil);
         } else {
             return self.error("Invalid iterator identifier.".to_string())
         }
@@ -770,19 +770,19 @@ impl JsonParser {
         Ok((i_name.clone(), cached_val.clone()))
     }
     
-    fn restore_temp_var(&mut self, var: (JsonValue, Option<JsonValue>)) {
-        if let (JsonValue::Str(ref s), Some(cache)) = (&var.0, var.1) {
+    fn restore_temp_var(&mut self, var: (EconValue, Option<EconValue>)) {
+        if let (EconValue::Str(ref s), Some(cache)) = (&var.0, var.1) {
             self.locals[self.depth as usize].insert(s.clone(), cache.clone());
         }
     }
     
-    fn fold_impl(&mut self) -> Result<JsonValue, String> {
+    fn fold_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Fold Function.".to_string())?;
         let right = self.val_expression()?;
         
         match right {
-            JsonValue::Arr(a) => {
+            EconValue::Arr(a) => {
                 self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
                 self.consume(Token::Pipe, "Expect '|' before args.".to_string())?;
@@ -794,22 +794,22 @@ impl JsonParser {
                 self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
 
                 for (j, aa) in a.iter().enumerate() {
-                    if let JsonValue::Str(ref s) = &temp_1.0 {
+                    if let EconValue::Str(ref s) = &temp_1.0 {
                         self.locals[self.depth as usize].insert(s.clone(), 
                             aa.clone()
                         );
                     }
                     
-                    if let JsonValue::Str(ref s) = &temp_2.0 {
+                    if let EconValue::Str(ref s) = &temp_2.0 {
                         if let None = self.locals[self.depth as usize].get(s) {
-                            self.locals[self.depth as usize].insert(s.clone(), JsonValue::Nil);
+                            self.locals[self.depth as usize].insert(s.clone(), EconValue::Nil);
                         }
                     }
                     
                     let goto_point = self.current;
                     let expr = self.val_expression()?;
                     
-                    if let JsonValue::Str(ref s) = &temp_2.0 {
+                    if let EconValue::Str(ref s) = &temp_2.0 {
                         self.locals[self.depth as usize].insert(s.clone(), expr);
                     }
 
@@ -818,14 +818,14 @@ impl JsonParser {
                     }
                 }
                 
-                let ret_val = if let JsonValue::Str(ref s) = &temp_2.0 {
+                let ret_val = if let EconValue::Str(ref s) = &temp_2.0 {
                     if let Some(rv) = self.locals[self.depth as usize].get(s) {
                         rv.clone()
                     } else {
-                        JsonValue::Nil
+                        EconValue::Nil
                     }
                 } else {
-                    JsonValue::Nil
+                    EconValue::Nil
                 };
                 
                 self.restore_temp_var(temp_1);
@@ -834,7 +834,7 @@ impl JsonParser {
                 self.consume(Token::RightParen, "Expect ')' after Fold Function.".to_string())?; 
                 Ok(ret_val)
             }
-            JsonValue::Obj(a) => {
+            EconValue::Obj(a) => {
                 self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
                 self.consume(Token::Pipe, "Expect '|' before args.".to_string())?;
@@ -846,26 +846,26 @@ impl JsonParser {
                 self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
 
                 for (j, aa) in a.data.iter().enumerate() {
-                    if let JsonValue::Str(ref s) = &temp_1.0 {
-                        let mut key_val = JsonObj::new();
+                    if let EconValue::Str(ref s) = &temp_1.0 {
+                        let mut key_val = EconObj::new();
 
-                        key_val.data.insert("key".to_string(), JsonValue::Str(aa.0.clone()));
+                        key_val.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
                         key_val.data.insert("val".to_string(), aa.1.clone());
                         self.locals[self.depth as usize].insert(s.clone(), 
-                            JsonValue::Obj(key_val)
+                            EconValue::Obj(key_val)
                         );
                     }
                     
-                    if let JsonValue::Str(ref s) = &temp_2.0 {
+                    if let EconValue::Str(ref s) = &temp_2.0 {
                         if let None = self.locals[self.depth as usize].get(s) {
-                            self.locals[self.depth as usize].insert(s.clone(), JsonValue::Nil);
+                            self.locals[self.depth as usize].insert(s.clone(), EconValue::Nil);
                         }
                     }
                     
                     let goto_point = self.current;
                     let expr = self.val_expression()?;
                     
-                    if let JsonValue::Str(ref s) = &temp_2.0 {
+                    if let EconValue::Str(ref s) = &temp_2.0 {
                         self.locals[self.depth as usize].insert(s.clone(), expr);
                     }
 
@@ -874,14 +874,14 @@ impl JsonParser {
                     }
                 }
                 
-                let ret_val = if let JsonValue::Str(ref s) = &temp_2.0 {
+                let ret_val = if let EconValue::Str(ref s) = &temp_2.0 {
                     if let Some(rv) = self.locals[self.depth as usize].get(s) {
                         rv.clone()
                     } else {
-                        JsonValue::Nil
+                        EconValue::Nil
                     }
                 } else {
-                    JsonValue::Nil
+                    EconValue::Nil
                 };
                 
                 self.restore_temp_var(temp_1);
@@ -896,7 +896,7 @@ impl JsonParser {
         }
     }
 
-    fn zip_impl(&mut self) -> Result<JsonValue, String> {
+    fn zip_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Zip Function.".to_string())?;
         let a = self.val_expression()?;
@@ -904,19 +904,19 @@ impl JsonParser {
         let b = self.val_expression()?;
         
         let res = match (a, b) {
-            (JsonValue::Arr(aa), JsonValue::Arr(bb)) => {
+            (EconValue::Arr(aa), EconValue::Arr(bb)) => {
                 let mut i = 0;
                 let mut ret = vec!();
                 loop {
                     match (aa.get(i), bb.get(i)) {
                         (Some(av), Some(bv)) => {
-                            ret.push(JsonValue::Arr(vec![av.clone(), bv.clone()]))
+                            ret.push(EconValue::Arr(vec![av.clone(), bv.clone()]))
                         }
                         (Some(av), None) => {
-                            ret.push(JsonValue::Arr(vec![av.clone(), JsonValue::Nil]))
+                            ret.push(EconValue::Arr(vec![av.clone(), EconValue::Nil]))
                         }
                         (None, Some(bv)) => {
-                            ret.push(JsonValue::Arr(vec![JsonValue::Nil, bv.clone()]))
+                            ret.push(EconValue::Arr(vec![EconValue::Nil, bv.clone()]))
                         }
                         (None, None) => { break; }
                     }
@@ -931,21 +931,21 @@ impl JsonParser {
         };
         
         self.consume(Token::RightParen, "Expect ')' after Zip Function.".to_string())?; 
-        Ok(JsonValue::Arr(res))
+        Ok(EconValue::Arr(res))
     }
 
-    fn partition(&mut self, a: &mut [JsonValue], temp_1: &(JsonValue, Option<JsonValue>), temp_2: &(JsonValue, Option<JsonValue>)) -> Result<usize, String> {
+    fn partition(&mut self, a: &mut [EconValue], temp_1: &(EconValue, Option<EconValue>), temp_2: &(EconValue, Option<EconValue>)) -> Result<usize, String> {
         let mut i = 0;
         let right = a.len() - 1;
      
         for j in 0..right {
-            if let JsonValue::Str(ref s) = &temp_1.0 {
+            if let EconValue::Str(ref s) = &temp_1.0 {
                 self.locals[self.depth as usize].insert(s.clone(), 
                     a[j].clone()
                 );
             }
             
-            if let JsonValue::Str(ref s) = &temp_2.0 {
+            if let EconValue::Str(ref s) = &temp_2.0 {
                 self.locals[self.depth as usize].insert(s.clone(), 
                     a[right].clone()
                 );
@@ -955,7 +955,7 @@ impl JsonParser {
             let condition = self.val_expression()?;
             
             match condition {
-                JsonValue::Bool(b) => {
+                EconValue::Bool(b) => {
                     if b {
                         a.swap(j, i);
                         i += 1;
@@ -973,7 +973,7 @@ impl JsonParser {
         Ok(i)
     }
      
-    fn quicksort(&mut self, a: &mut [JsonValue], temp_1: &(JsonValue, Option<JsonValue>), temp_2: &(JsonValue, Option<JsonValue>)) -> Result<(), String> {
+    fn quicksort(&mut self, a: &mut [EconValue], temp_1: &(EconValue, Option<EconValue>), temp_2: &(EconValue, Option<EconValue>)) -> Result<(), String> {
         if a.len() > 1 {
             let q = self.partition(a, temp_1, temp_2)?;
             self.quicksort(&mut a[..q], temp_1, temp_2)?;
@@ -983,13 +983,13 @@ impl JsonParser {
         Ok(())
     }
     
-    fn sort_impl(&mut self) -> Result<JsonValue, String> {
+    fn sort_impl(&mut self) -> Result<EconValue, String> {
         self.eat();
         self.consume(Token::LeftParen, "Expect '(' after Sort Function.".to_string())?;
         let right = self.val_expression()?;
         
         match right {
-            JsonValue::Arr(a) => {
+            EconValue::Arr(a) => {
                 self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
                 self.consume(Token::Pipe, "Expect '|' before args.".to_string())?;
@@ -1009,7 +1009,7 @@ impl JsonParser {
                 self.restore_temp_var(temp_2);
                 
                 self.consume(Token::RightParen, "Expect ')' after Sort Function.".to_string())?; 
-                Ok(JsonValue::Arr(new_vec))
+                Ok(EconValue::Arr(new_vec))
             }
             _ => {
                 self.error("Invalid literal/variable in Sort Function arguments.".to_string())
@@ -1017,7 +1017,7 @@ impl JsonParser {
         }
     }
     
-    fn primary(&mut self) -> Result<JsonValue, String> {
+    fn primary(&mut self) -> Result<EconValue, String> {
         match self.peek().clone() {
             Token::Fn(func) => {
                 match func {
@@ -1052,19 +1052,19 @@ impl JsonParser {
             }
             Token::Num(n) => {
                 self.eat();
-                Ok(JsonValue::Num(n))
+                Ok(EconValue::Num(n))
             }
             Token::Bool(b) => {
                 self.eat();
-                Ok(JsonValue::Bool(b))
+                Ok(EconValue::Bool(b))
             }
             Token::Str(s) => {
                 self.eat();
-                Ok(JsonValue::Str(s))
+                Ok(EconValue::Str(s))
             }
             Token::Nil => {
                 self.eat();
-                Ok(JsonValue::Nil) 
+                Ok(EconValue::Nil) 
             }
             Token::LeftCurl => {
                 self.eat();
@@ -1086,47 +1086,47 @@ impl JsonParser {
                 self.eat();
                 
                 if self.depth-v.0 < 0 {
-                    Ok(JsonValue::Nil)
+                    Ok(EconValue::Nil)
                 } else {
                     let value = if v.0 >= 0 {
                         match self.locals[(self.depth-v.0) as usize].get(&v.1) {
-                            Some(JsonValue::Num(n)) => {
-                                Ok(JsonValue::Num(*n))
+                            Some(EconValue::Num(n)) => {
+                                Ok(EconValue::Num(*n))
                             }
-                            Some(JsonValue::Str(s)) => {
-                                Ok(JsonValue::Str(s.to_string()))
+                            Some(EconValue::Str(s)) => {
+                                Ok(EconValue::Str(s.to_string()))
                             }
-                            Some(JsonValue::Bool(b)) => {
-                                Ok(JsonValue::Bool(*b))
+                            Some(EconValue::Bool(b)) => {
+                                Ok(EconValue::Bool(*b))
                             }
-                            Some(JsonValue::Obj(o)) => {
-                                Ok(JsonValue::Obj(o.clone()))
+                            Some(EconValue::Obj(o)) => {
+                                Ok(EconValue::Obj(o.clone()))
                             }
-                            Some(JsonValue::Arr(a)) => {
-                                Ok(JsonValue::Arr(a.clone()))
+                            Some(EconValue::Arr(a)) => {
+                                Ok(EconValue::Arr(a.clone()))
                             }
                             _ => {
-                                Ok(JsonValue::Nil)
+                                Ok(EconValue::Nil)
                             }
                         }
                     } else {
                         let mut res = None;
                         for i in (0..=self.depth).rev() {
                             res = match self.locals[i as usize].get(&v.1) {
-                                Some(JsonValue::Num(n)) => {
-                                    Some(JsonValue::Num(*n))
+                                Some(EconValue::Num(n)) => {
+                                    Some(EconValue::Num(*n))
                                 }
-                                Some(JsonValue::Str(s)) => {
-                                    Some(JsonValue::Str(s.to_string()))
+                                Some(EconValue::Str(s)) => {
+                                    Some(EconValue::Str(s.to_string()))
                                 }
-                                Some(JsonValue::Bool(b)) => {
-                                    Some(JsonValue::Bool(*b))
+                                Some(EconValue::Bool(b)) => {
+                                    Some(EconValue::Bool(*b))
                                 }
-                                Some(JsonValue::Obj(o)) => {
-                                    Some(JsonValue::Obj(o.clone()))
+                                Some(EconValue::Obj(o)) => {
+                                    Some(EconValue::Obj(o.clone()))
                                 }
-                                Some(JsonValue::Arr(a)) => {
-                                    Some(JsonValue::Arr(a.clone()))
+                                Some(EconValue::Arr(a)) => {
+                                    Some(EconValue::Arr(a.clone()))
                                 }
                                 _ => {
                                     None
@@ -1140,13 +1140,13 @@ impl JsonParser {
                         if let Some(r) = res {
                             Ok(r)
                         } else {
-                            Ok(JsonValue::Nil)
+                            Ok(EconValue::Nil)
                         }
                     };
                     
                     match value {
-                        Ok(JsonValue::Obj(o)) => {
-                            let mut c = JsonValue::Obj(o.clone());
+                        Ok(EconValue::Obj(o)) => {
+                            let mut c = EconValue::Obj(o.clone());
                         
                             let mut call_type = self.peek().clone();
 
@@ -1175,13 +1175,13 @@ impl JsonParser {
                                         };
                                         
                                         match val {
-                                            JsonValue::Str(s) => {
+                                            EconValue::Str(s) => {
                                                 match c.clone() {
-                                                    JsonValue::Obj(oo) => {
+                                                    EconValue::Obj(oo) => {
                                                         if let Some(v) = oo.data.get(&s) {
                                                             c = v.clone();
                                                         } else {
-                                                            c = JsonValue::Nil;
+                                                            c = EconValue::Nil;
                                                         }
                                                     }
                                                     _ => {
@@ -1189,27 +1189,27 @@ impl JsonParser {
                                                     }
                                                 }
                                             }
-                                            JsonValue::Num(n) => {
+                                            EconValue::Num(n) => {
                                                 match c.clone() {
-                                                    JsonValue::Arr(aa) => {
+                                                    EconValue::Arr(aa) => {
                                                         if n < 0.0 {
-                                                            c = JsonValue::Nil
+                                                            c = EconValue::Nil
                                                         } else {
                                                             if let Some(v) = aa.get(n as usize) {
                                                                 c = v.clone()
                                                             } else {
-                                                                c = JsonValue::Nil
+                                                                c = EconValue::Nil
                                                             }
                                                         }
                                                     }
-                                                    JsonValue::Str(ss) => {
+                                                    EconValue::Str(ss) => {
                                                         if n < 0.0 {
-                                                            c = JsonValue::Nil
+                                                            c = EconValue::Nil
                                                         } else {
                                                             if let Some(v) = ss.chars().nth(n as usize) {
-                                                                c = JsonValue::Str(v.to_string())
+                                                                c = EconValue::Str(v.to_string())
                                                             } else {
-                                                                c = JsonValue::Nil
+                                                                c = EconValue::Nil
                                                             }
                                                         }
                                                     }
@@ -1232,8 +1232,8 @@ impl JsonParser {
                             
                             Ok(c)
                         }
-                        Ok(JsonValue::Arr(a)) => {
-                            let mut c = JsonValue::Arr(a.clone());
+                        Ok(EconValue::Arr(a)) => {
+                            let mut c = EconValue::Arr(a.clone());
                             
                             let mut call_type = self.peek().clone();
                             
@@ -1261,13 +1261,13 @@ impl JsonParser {
                                         };
                                         
                                         match val {
-                                            JsonValue::Str(s) => {
+                                            EconValue::Str(s) => {
                                                 match c.clone() {
-                                                    JsonValue::Obj(oo) => {
+                                                    EconValue::Obj(oo) => {
                                                         if let Some(v) = oo.data.get(&s) {
                                                             c = v.clone();
                                                         } else {
-                                                            c = JsonValue::Nil;
+                                                            c = EconValue::Nil;
                                                         }
                                                     }
                                                     _ => {
@@ -1275,27 +1275,27 @@ impl JsonParser {
                                                     }
                                                 }
                                             }
-                                            JsonValue::Num(n) => {
+                                            EconValue::Num(n) => {
                                                 match c.clone() {
-                                                    JsonValue::Arr(aa) => {
+                                                    EconValue::Arr(aa) => {
                                                         if n < 0.0 {
-                                                            c = JsonValue::Nil
+                                                            c = EconValue::Nil
                                                         } else {
                                                             if let Some(v) = aa.get(n as usize) {
                                                                 c = v.clone()
                                                             } else {
-                                                                c = JsonValue::Nil
+                                                                c = EconValue::Nil
                                                             }
                                                         }
                                                     }
-                                                    JsonValue::Str(ss) => {
+                                                    EconValue::Str(ss) => {
                                                         if n < 0.0 {
-                                                            c = JsonValue::Nil
+                                                            c = EconValue::Nil
                                                         } else {
                                                             if let Some(v) = ss.chars().nth(n as usize) {
-                                                                c = JsonValue::Str(v.to_string())
+                                                                c = EconValue::Str(v.to_string())
                                                             } else {
-                                                                c = JsonValue::Nil
+                                                                c = EconValue::Nil
                                                             }
                                                         }
                                                     }
@@ -1319,20 +1319,20 @@ impl JsonParser {
                             
                             Ok(c)
                         }
-                        Ok(JsonValue::Str(s)) => {
+                        Ok(EconValue::Str(s)) => {
                             match self.peek() {
                                 Token::Dot => {
                                     self.eat();
                                     let expr = self.val_expression()?;
                                     match expr {
-                                        JsonValue::Num(n) => {
+                                        EconValue::Num(n) => {
                                             if n < 0.0 {
-                                                Ok(JsonValue::Nil)
+                                                Ok(EconValue::Nil)
                                             } else {
                                                 if let Some(v) = s.chars().nth(n as usize) {
-                                                    Ok(JsonValue::Str(v.to_string()))
+                                                    Ok(EconValue::Str(v.to_string()))
                                                 } else {
-                                                    Ok(JsonValue::Nil)
+                                                    Ok(EconValue::Nil)
                                                 }
                                             }
                                         }
@@ -1345,15 +1345,15 @@ impl JsonParser {
                                     self.eat();
                                     let expr = self.val_expression()?;
                                     match expr {
-                                        JsonValue::Num(n) => {  
+                                        EconValue::Num(n) => {  
                                             self.consume(Token::RightBracket, "Expect ']' after String Variable.".to_string())?;
                                             if n < 0.0 {
-                                                Ok(JsonValue::Nil)
+                                                Ok(EconValue::Nil)
                                             } else {
                                                 if let Some(v) = s.chars().nth(n as usize) {
-                                                    Ok(JsonValue::Str(v.to_string()))
+                                                    Ok(EconValue::Str(v.to_string()))
                                                 } else {
-                                                    Ok(JsonValue::Nil)
+                                                    Ok(EconValue::Nil)
                                                 }
                                             }
                                             
@@ -1364,7 +1364,7 @@ impl JsonParser {
                                     }
                                 }
                                 _ => {
-                                    Ok(JsonValue::Str(s.clone()))
+                                    Ok(EconValue::Str(s.clone()))
                                 }
                             }
                         }
@@ -1381,16 +1381,16 @@ impl JsonParser {
                 r
             }
             _ => { 
-                Ok(JsonValue::Nil) 
+                Ok(EconValue::Nil) 
             }
         }    
     }
     
-    fn val_expression(&mut self) -> Result<JsonValue, String> {
+    fn val_expression(&mut self) -> Result<EconValue, String> {
         self.equality()
     }
     
-    fn array_value(&mut self) -> Result<JsonValue, String> {
+    fn array_value(&mut self) -> Result<EconValue, String> {
         match self.peek().clone() {
             Token::Num(_) | Token::Var(_) | Token::Str(_) | Token::LeftParen 
             | Token::Bool(_) | Token::Not | Token::Sharp | Token::LeftBracket
@@ -1401,7 +1401,7 @@ impl JsonParser {
         }
     }
     
-    fn array(&mut self) -> Result<JsonValue, String> {
+    fn array(&mut self) -> Result<EconValue, String> {
         let mut result = vec!();
         
         while !self.check(Token::RightBracket) && !self.at_end() {
@@ -1415,10 +1415,10 @@ impl JsonParser {
         }
         
         self.consume(Token::RightBracket, "Expect ']' after array.".to_string())?;
-        Ok(JsonValue::Arr(result))
+        Ok(EconValue::Arr(result))
     }
     
-    fn key(&mut self) -> Result<(String, JsonValue), String> {
+    fn key(&mut self) -> Result<(String, EconValue), String> {
         match self.peek().clone() {
             Token::Str(s) => {
                 self.eat();
@@ -1438,7 +1438,7 @@ impl JsonParser {
             Token::Var(_) => {
                 let v_key = self.primary()?;
                 
-                if let JsonValue::Str(s) = v_key {
+                if let EconValue::Str(s) = v_key {
                     self.consume(Token::Colon, "Expected ':' after Key identifier".to_string())?;
                     
                     let result = match self.peek().clone() {
@@ -1461,7 +1461,7 @@ impl JsonParser {
         }
     }
     
-    fn expression(&mut self) -> Result<(String, JsonValue), String> {
+    fn expression(&mut self) -> Result<(String, EconValue), String> {
         if let Token::Str(_) | Token::Var(_) = self.peek() {
             self.key()
         } else {
@@ -1469,7 +1469,7 @@ impl JsonParser {
         }
     }
     
-    fn object(&mut self) -> Result<JsonValue, String> {
+    fn object(&mut self) -> Result<EconValue, String> {
         if self.match_single(Token::LeftCurl) {
             self.locals.push(HashMap::new());
             self.depth += 1;
@@ -1479,8 +1479,8 @@ impl JsonParser {
         }
     }
     
-    fn block(&mut self) -> Result<JsonValue, String> {
-        let mut result = JsonObj::new();
+    fn block(&mut self) -> Result<EconValue, String> {
+        let mut result = EconObj::new();
         
         while !self.check(Token::RightCurl) && !self.at_end() {
             let key_val = self.expression()?;
@@ -1497,10 +1497,10 @@ impl JsonParser {
             }
         }
         self.consume(Token::RightCurl, "Expect '}' after block.".to_string())?;
-        Ok(JsonValue::Obj(result))
+        Ok(EconValue::Obj(result))
     }
 
-    pub fn parse(&mut self, lexer: &mut JsonLexer, debug: bool) -> Result<Json, String> {
+    pub fn parse(&mut self, lexer: &mut EconLexer, debug: bool) -> Result<EconObj, String> {
         if debug {  
             println!("----Src----"); 
             println!("{}", lexer.source);
@@ -1546,30 +1546,24 @@ impl JsonParser {
             println!("[Completed in {} ms]", now.elapsed().as_millis());
             println!("----Parse----"); 
         }
-        let mut result = vec!();
-        
-        while !self.at_end() {
-            match self.object() {
-                Ok(value) => result.push(value),
-                Err(e) => return Err(e)
-            }
-            
-            if !self.match_single(Token::Comma) {
-                if self.check(Token::LeftCurl) {
-                    //if self.peek_full().line == self.prev_full().line {
-                        return self.error("Expect ','.".to_string())
-                    //}
+
+        match self.object() {
+            Ok(value) => {
+                match value {
+                    EconValue::Obj(v) => {
+                        if debug { 
+                            println!("[Completed in {} ms]", now.elapsed().as_millis()); 
+                            println!("{}", &v);
+                        }
+                        
+                        Ok(v)
+                    }
+                    _ => {
+                        self.error(String::from("Object not found."))
+                    }
                 }
-                
             }
+            Err(e) => Err(e)
         }
-        let final_result = Json { data: result };
-
-        if debug { 
-            println!("[Completed in {} ms]", now.elapsed().as_millis()); 
-            println!("{}", &final_result);
-        }
-
-        Ok(final_result)
     }
 }

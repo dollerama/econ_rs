@@ -76,7 +76,7 @@ impl fmt::Display for TokenData {
     }
 }
 
-pub struct JsonLexer {
+pub struct EconLexer {
     pub source: String,
     line: usize,
     section: (usize, usize),
@@ -85,7 +85,7 @@ pub struct JsonLexer {
     macros: HashMap<String, (Vec<TokenData>, Vec<TokenData>)>
 }
 
-impl JsonLexer {
+impl EconLexer {
     pub fn init(source: &str) -> Self {
         Self {
             source: String::from(source),

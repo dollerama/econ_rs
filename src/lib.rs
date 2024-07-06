@@ -1,4 +1,4 @@
-pub mod json_data;
+pub mod econ;
 pub mod object;
 pub mod value;
 pub mod lexer;
@@ -8,13 +8,14 @@ pub mod parser;
 mod tests {
     use std::{fs, path::PathBuf, str::FromStr};
 
-    use json_data::Json;
+    use econ::Econ;
+    use object::Access;
 
     use super::*;
 
     #[test]
     fn simple() {
-        let obj = Json::create(
+        let obj = Econ::create(
         r#"
         {
             a: 1,
@@ -27,23 +28,17 @@ mod tests {
 
     #[test]
     fn simple_from_file() {
-        let file = fs::read_to_string(
-            PathBuf::from_str("Cases/Simple.json").expect("Invalid Path.")
-        );
-        assert_eq!(true, matches!(Json::create(&file.unwrap(), true), Ok(_)));
+        assert_eq!(true, matches!(Econ::create("test/Simple.econ", true), Ok(_)));
     }
 
     #[test]
     fn complex_from_file() {
-        let file = fs::read_to_string(
-            PathBuf::from_str("Cases/Complex.json").expect("Invalid Path.")
-        );
-        assert_eq!(true, matches!(Json::create(&file.unwrap(), true), Ok(_)));
+        assert_eq!(true, matches!(Econ::create("test/Complex.econ", true), Ok(_)));
     }
 
     #[test]
     fn functions() {
-        let obj = Json::create(
+        let obj = Econ::create(
         r#"
         {
             aa: "Hello,how,are,you",
@@ -51,12 +46,14 @@ mod tests {
         }
         "#, true);
 
+        println!("{:?}", obj);
+
         assert_eq!(true, matches!(obj, Ok(_)));
     }
 
     #[test]
     fn macros() {
-        let obj = Json::create(
+        let obj = Econ::create(
         r#"
         {
             @person(n, a, s) n: { age: a, salary: s }
@@ -73,6 +70,26 @@ mod tests {
         "#, true);
 
         assert_eq!(true, matches!(obj, Ok(_)));
+    }
+
+    #[test]
+    fn api_access_obj() {
+        let obj = Econ::from(
+        r#"
+        {
+            a: {
+                b: {
+                    c: [
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                }
+            }
+        }
+        "#);
+        assert_eq!(3f64, obj.get("a").get("b").get("c").get(2).value::<f64>());
     }
 }
 
