@@ -900,3 +900,23 @@ r#"
 ```rust
 let obj = Econ::from("file.econ");
 ```
+## Accessing Values
+>Source
+```rust
+let obj = Econ::from(
+r#"
+{
+    a: {
+        b: {
+            c: [
+                1,
+                2,
+                3,
+                4
+            ]
+        }
+    }
+}
+"#);
+assert_eq!(3f64, obj.get("a").get("b").get("c").get(2).value::<f64>());
+```
