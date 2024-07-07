@@ -91,5 +91,18 @@ mod tests {
         "#);
         assert_eq!(3f64, obj.get("a").get("b").get("c").get(2).value::<f64>());
     }
+
+    #[test]
+    fn constraints() {
+        let obj = Econ::create(
+        r#"
+        {
+            @!{string, x => $x == "Hello World", "No Hello Worlds!"}
+            a: "Hello World"
+        }
+        "#, true);
+        
+        assert_eq!(true, matches!(obj, Err(_)));
+    }
 }
 

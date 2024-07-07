@@ -52,6 +52,8 @@ pub enum Token {
     Question,
     Exclaim,
     Pipe,
+    ConstraintMacro,
+    ErrorMacro,
     EOF,
 }
 
@@ -565,7 +567,20 @@ impl EconLexer {
                         self.make_token(Token::Less)
                     }
                 }
-                Some('@') => { self.macro_t() }
+                Some('@') => { 
+                    match self.peek() {
+                        Some('{') => {
+                            self.make_token(Token::ConstraintMacro)
+                        }
+                        Some('!') => {
+                            self.eat();
+                            self.make_token(Token::ErrorMacro)
+                        }
+                        _ => {
+                            self.macro_t()
+                        }
+                    }
+                }
                 Some('"') => { self.string() }
                 Some('$') | Some('!') => { self.variable() }
                 Some(v) => {

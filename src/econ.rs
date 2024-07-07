@@ -13,19 +13,37 @@ impl Econ {
                     Ok(f) => {
                         let mut parser = EconParser::new(&f);
                         let mut lexer = EconLexer::init(&f);
-                        parser.parse(&mut lexer, debug)
+                        let result = parser.parse(&mut lexer, debug);
+                        if debug {
+                            if let Err(e) = &result {
+                                eprintln!("{}", e);
+                            }
+                        }
+                        result
                     }
                     Err(e) => {
                         let mut parser = EconParser::new(src);
                         let mut lexer = EconLexer::init(src);
-                        parser.parse(&mut lexer, debug)
+                        let result = parser.parse(&mut lexer, debug);
+                        if debug {
+                            if let Err(e) = &result {
+                                eprintln!("{}", e);
+                            }
+                        }
+                        result
                     }
                 }
             }
             Err(_) => {
                 let mut parser = EconParser::new(src);
                 let mut lexer = EconLexer::init(src);
-                parser.parse(&mut lexer, debug)
+                let result = parser.parse(&mut lexer, debug);
+                if debug {
+                    if let Err(e) = &result {
+                        eprintln!("{}", e);
+                    }
+                }
+                result
             }
         }
     }
