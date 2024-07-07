@@ -1754,59 +1754,107 @@ impl EconParser {
                 Token::ConstraintMacro => {
                     self.eat();
                     self.consume(Token::LeftCurl, "Expected '{' after '@'.".to_string())?;
-                    
-                    if let Token::Str(s) = self.peek().clone() {
-                        self.eat();
-                        self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
-                        let start_of = self.current;
-                        
-                        if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
-                            v.push((start_of, false));
-                        } else {
-                            self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, false)));
-                        }
-                        
-                        loop {
-                            if self.match_single(Token::RightCurl) {
-                                break;
-                            }
-                            self.eat();
-                        }
 
-                        if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                            continue;    
+                    match self.peek().clone() {
+                        Token::Str(s) => {
+                            self.eat();
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
+                                v.push((start_of, false));
+                            } else {
+                                self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, false)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
                         }
-                    } else {
-                        return self.error("Constraint Macro preprocessor Error.".to_string());    
+                        Token::Nil => {
+                            self.eat();
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut("nil") {
+                                v.push((start_of, false));
+                            } else {
+                                self.constraints[self.depth as usize].insert("nil".to_string(), vec!((start_of, false)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
+                        }
+                        _ => { return self.error("Constraint Macro preprocessor Error.".to_string()); }
                     }
                 }
                 Token::ErrorMacro => {
                     self.eat();
                     self.consume(Token::LeftCurl, "Expected '{' after '@!'.".to_string())?;
-                    
-                    if let Token::Str(s) = self.peek().clone() {
-                        self.eat();                        self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
-                        let start_of = self.current;
-                        
-                        if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
-                            v.push((start_of, true));
-                        } else {
-                            self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, true)));
-                        }
-                        
-                        loop {
-                            if self.match_single(Token::RightCurl) {
-                                break;
-                            }
-                            self.eat();
-                        }
 
-                        if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                            continue;    
+                    match self.peek().clone() {
+                        Token::Str(s) => {
+                            self.eat();                        
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
+                                v.push((start_of, true));
+                            } else {
+                                self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, true)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
                         }
-                    } else {
-                        return self.error("Error Macro preprocessor Error.".to_string());    
+                        Token::Nil => {
+                            self.eat();                        
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut("nil") {
+                                v.push((start_of, true));
+                            } else {
+                                self.constraints[self.depth as usize].insert("nil".to_string(), vec!((start_of, true)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
+                        }
+                        _ => { return self.error("Error Macro preprocessor Error.".to_string());  }
                     }
+                   
                 }
                 _ => { break; }
             }
