@@ -1358,10 +1358,9 @@ impl EconParser {
                 self.constraints.push(HashMap::new());
                 self.depth += 1;
                 let obj = self.block()?;
+                self.locals.pop();
+                self.constraints.pop();
                 self.depth -= 1;
-                if self.depth == -1 {
-                    self.locals = vec!();
-                }
                 Ok(obj)
             }
             Token::LeftBracket => {
@@ -1695,9 +1694,7 @@ impl EconParser {
             let val = self.array_value()?;
             result.push(val);
             if !self.check(Token::RightBracket) {
-                //if self.peek_full().line == self.prev_full().line {
-                    self.consume(Token::Comma, "Expect ','.".to_string())?;  
-                //}
+                self.consume(Token::Comma, "Expect ','.".to_string())?;  
             }
         }
         

@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt};
 
+use indexmap::IndexMap;
+
 use crate::value::EconValue;
 
 pub trait Access<T> {
@@ -9,7 +11,7 @@ pub trait Access<T> {
 
 #[derive(Debug, Clone)]
 pub struct EconObj {
-    pub data: HashMap<String, EconValue>
+    pub data: IndexMap<String, EconValue>
 }
 
 impl fmt::Display for EconObj {
@@ -23,7 +25,7 @@ impl EconObj {
 
     pub fn new() -> Self {
         Self {
-            data: HashMap::new()
+            data: IndexMap::new()
         }
     }
 

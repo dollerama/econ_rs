@@ -216,7 +216,9 @@ impl EconLexer {
     
     fn variable(&mut self) -> Result<TokenData, String> {
         while let Some(v) = self.peek() {
-            if let '/' | '*' | '+' | '-' | '(' | ')' | ' ' | '\n' | '.' | ',' | '[' | ']' | ';' | ':' | '|' | '@' = v {
+            if let '/' | '*' | '+' | '-' | '(' | ')' | ' ' 
+            | '\n' | '.' | ',' | '[' | ']' | ';' | ':' 
+            | '|' | '@' | '%' = v {
                 break;
             } else {
                 self.eat();

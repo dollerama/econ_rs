@@ -104,5 +104,24 @@ mod tests {
         
         assert_eq!(true, matches!(obj, Err(_)));
     }
+
+    #[test]
+    fn ref_depth() {
+        let obj = Econ::create(
+        r#"
+        {
+            a: {
+                aa: 1,
+                ab: $aa
+            },
+            b: {
+                bb: $aa,
+                ba: !a
+            }
+        }
+        "#, true);
+        
+        assert_eq!(true, matches!(obj, Ok(_)));
+    }
 }
 
