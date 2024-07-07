@@ -322,7 +322,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
  - [Filter](#Filter) ``filter(obj/array, iter => condition) -> obj/array``
  - [Map](#Map) ``map(obj/array, iter => expr) -> obj/array``
  - [Chars](#Chars) ``chars(string) -> array``
- - [String](#String) ``string(array) -> string``
+ - [To String](#To-String) ``to_string(array) -> string``
  - [Keys](#Keys) ``keys(obj) -> array``
  - [Values](#Values) ``values(obj) -> array``
  - [Fold](#Fold) ``fold(obj/array, |iter, acc| => expr) -> literal``
@@ -420,13 +420,13 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 	]
 }
 ```
- ### String
+ ### To String
  Takes an Array of chars and returns a string.
   ##### Example
  >Input
 ```js
 {
-	a: string(["H", "e", "l", "l", "o"])
+	a: to_string(["H", "e", "l", "l", "o"])
 }
 ```
 >Output
