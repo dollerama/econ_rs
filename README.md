@@ -718,6 +718,149 @@ token_stream_on_newline
 	"c": false
 }
 ```
+# Pre-Processor Macros
+**Econ** allows for two other types of macros which works on types rather than in function style.
+## Constraint Macro
+```js
+@{type, ref => condition, new_value}
+```
+
+A constraint macro will work on all values of a certain type that are in scope. Only atomic types are allowed ``number``, ``bool``, ``string``, ``nil``
+### Example 1
+> Input 
+```js
+{
+	@{number, x => ($x%2) == 0, "Even"}
+	a: 2,
+	b: 3,
+	c: 4
+}
+```
+> Ouput
+```js
+{
+	"a": "Even",
+	"b": 3,
+	"c": "Even"
+}
+```
+### Example 2
+> Input 
+```js
+{
+	@{number, x => $x < 5, 5}
+	a: [
+		2,
+		4,
+		7,
+		5,
+		10
+	],
+	b: {
+		@{number, x => $x > 0, $x * -1}
+		a: [
+			2,
+			4,
+			7,
+			5,
+			10
+		]
+	}
+}
+```
+> Ouput
+```js
+{
+	"a": [
+		5,
+		5,
+		7,
+		5,
+		10
+	],
+	"b": {
+		"a": [
+			5,
+			5,
+			5,
+			5,
+			5
+		]
+	}
+}
+```
+### Example 3
+> Input 
+```js
+{
+	@{string, x => $x == $x, to_string(filter(chars($x), x => $x ~= "_"))}
+	a: "_Mike",
+	b: "Kat_e",
+	c: "_Lis_a",
+	d: "Bill"
+}
+```
+> Ouput
+```js
+{
+	"a": "Mike",
+	"b": "Kate",
+	"c": "Lisa",
+	"d": "Bill"
+}
+```
+### Example 4
+> Input 
+```js
+{
+	@{nil, x => $x, false}
+	a: nil
+}
+```
+> Ouput
+```js
+{
+	"a": false
+}
+```
+## Error Macro
+An error macro is similar to a constraint macro but it throws a parser error rather than changing the value. The source will not be parsed if the error is thrown and it will not panic the main thread unless you handle it that way.
+```js
+@!{type, ref => condition, error_msg}
+```
+### Example 1
+> Input
+```js
+{
+	@!{string, x => $x == "Hello World!", "No Hello Worlds!"}
+	a: "Hello World!"
+}
+```
+> Output
+```rust
+Line [0003] Error Parsing -> "No Hello Worlds!"
+
+Line [0002]			@!{string, x => $x == "Hello World!", "No Hello Worlds!"}
+Line [0003]	->		a: "Hello World!"
+Line [0004] 	}
+```
+### Example 2
+> Input
+```js
+{
+	@!{bool, x => $x == $x, "Use a string Yes/No rather than booleans."}
+	a: true
+}
+```
+> Output
+```rust
+Line [0003] Error Parsing -> "Use a string Yes/No rather than booleans."
+
+Line [0002]			@!{bool, x => $x == $x, "Use a string Yes/No rather than booleans."}
+Line [0003]	->		a: true
+Line [0004] 	}
+```
+
 # Econ Rust Api
 The proof-of-concept Api for **Econ** is written in *Rust*
 ## Create
