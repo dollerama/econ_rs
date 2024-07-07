@@ -5,7 +5,7 @@ pub enum Function {
     Filter,
     Map,
     Chars,
-    String,
+    ToString,
     Keys,
     Values,
     Fold,
@@ -61,13 +61,6 @@ pub enum Token {
 pub struct TokenData {
     pub token: Token,
     pub line: usize,
-    pub section: (usize, usize)
-}
-
-impl TokenData {
-    pub fn get_section(&self, src: &String) -> String {
-        src[self.section.0..self.section.1].to_string()
-    }
 }
 
 impl fmt::Display for TokenData {
@@ -81,7 +74,6 @@ impl fmt::Display for TokenData {
 pub struct EconLexer {
     pub source: String,
     line: usize,
-    section: (usize, usize),
     start: usize,
     current: usize,
     macros: HashMap<String, (Vec<TokenData>, Vec<TokenData>)>
@@ -94,17 +86,12 @@ impl EconLexer {
             start: 0,
             current: 0,
             line: 0,
-            section: (0, 0),
             macros: HashMap::new()
         }
     }
     
     fn error<T>(&self, msg: String) -> Result<T, String> {
         Err(format!("Line:[{:04}] -> Error Lexing -> {}", self.line, msg.clone()))
-    }
-    
-    fn get_section(&self) -> (usize, usize) {
-        self.section
     }
     
     fn peek(&self) -> Option<char> {
@@ -129,7 +116,7 @@ impl EconLexer {
     }
     
     fn make_token(&self, t: Token) -> Result<TokenData, String> {
-        Ok(TokenData{ token: t, line: self.line, section: self.get_section()})
+        Ok(TokenData{ token: t, line: self.line })
     }
     
     fn skip_whitespace(&mut self) -> Result<(), String> {
@@ -150,35 +137,6 @@ impl EconLexer {
                 }
                 Some('\n') => { 
                     self.line += 1;
-                    let mut chars = self.source.chars();
-                    let chars_len = self.source.chars().count();
-
-                    let mut count = 0;
-                    
-                    for i in (0..self.current).rev() {
-                        if let Some('\n') = chars.nth(i) {
-                            count += 1;
-                        }
-                        
-                        if count > 1 {
-                            self.section.0 = i;
-                            break;
-                        }
-                    }
-                    
-                    count = 0;
-                    
-                    for i in self.current+1..chars_len {
-                        if let Some('\n') = chars.nth(i) {
-                            count += 1;
-                        }
-                        
-                        if count > 0 {
-                            self.section.1 = i;
-                            break;
-                        }
-                    }
-                    
                     self.eat(); 
                 }
                 _ => { return Ok(()); }
@@ -285,7 +243,7 @@ impl EconLexer {
                 self.start += 1;
             }
         
-            Ok(TokenData{ token: Token::Var((search, String::from(&self.source[self.start+1..self.current]))), line: self.line, section: self.get_section()})
+            Ok(TokenData{ token: Token::Var((search, String::from(&self.source[self.start+1..self.current]))), line: self.line})
         }
     }
     
@@ -313,8 +271,8 @@ impl EconLexer {
             self.make_token(Token::Fn(Function::Map))
         } else if &self.source[self.start..self.current] == "chars" {
             self.make_token(Token::Fn(Function::Chars))
-        } else if &self.source[self.start..self.current] == "string" {
-            self.make_token(Token::Fn(Function::String))
+        } else if &self.source[self.start..self.current] == "to_string" {
+            self.make_token(Token::Fn(Function::ToString))
         } else if &self.source[self.start..self.current] == "keys" {
             self.make_token(Token::Fn(Function::Keys))
         } else if &self.source[self.start..self.current] == "values" {

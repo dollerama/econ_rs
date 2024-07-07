@@ -74,19 +74,30 @@ impl EconParser {
         
         let data = self.peek_full().clone();
         let current_line = data.line;
-        let total_lines = data.get_section(&self.source).lines().count();
-        
-        for (num, line) in data.get_section(&self.source).lines().enumerate() {
-            if num == 0 { continue; }
-            let actual_line_num = (current_line as i32 - total_lines as i32) + (num as i32 + 1i32);
-            if actual_line_num < 0 {
-                continue;
+
+        for (line_num, line) in self.source.lines().enumerate() {
+            if line_num+1 == current_line || (line_num != 0 && line_num-1 == current_line) {
+                result_err.push_str(&format!("[{:04}]   {}\n", line_num, line));
             }
-            
-            if actual_line_num == current_line as i32 {
-                result_err.push_str(&format!("-> [{:04}]{}\n", actual_line_num, line));
-            } else {
-                result_err.push_str(&format!("[{:04}]   {}\n", actual_line_num, line));
+            if line_num == current_line {
+                result_err.push_str(&format!("-> [{:04}]{}\n", line_num, line));
+            }
+        }
+        
+        Err(result_err)
+    }
+
+    fn error_at<T>(&self, msg: String, current_line: usize) -> Result<T, String> {
+        let mut result_err = String::from("");
+        
+        result_err.push_str(&format!("Line [{:04}] Error Parsing -> \"{}\"\n", current_line, msg.clone()));
+
+        for (line_num, line) in self.source.lines().enumerate() {
+            if line_num+1 == current_line || (line_num != 0 && line_num-1 == current_line) {
+                result_err.push_str(&format!("[{:04}]   {}\n", line_num, line));
+            }
+            if line_num == current_line {
+                result_err.push_str(&format!("-> [{:04}]{}\n", line_num, line));
             }
         }
         
@@ -1034,7 +1045,7 @@ impl EconParser {
                     Function::Chars => {
                         self.chars_impl()
                     }
-                    Function::String => {
+                    Function::ToString => {
                         self.string_impl()
                     }
                     Function::Keys => {
@@ -1096,9 +1107,9 @@ impl EconParser {
                                         if cst.1 {
                                             match val {
                                                 EconValue::Str(s) => {
-                                                    return self.error(format!("{}", s));
+                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
                                                 }
-                                                _ => return self.error(format!("{}", val))
+                                                _ => return self.error_at(format!("{}", val),self.tokens[return_to-1].line)
                                             }
                                             
                                         }
@@ -1167,9 +1178,9 @@ impl EconParser {
                                         if cst.1 {
                                             match val {
                                                 EconValue::Str(s) => {
-                                                    return self.error(format!("{}", s));
+                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
                                                 }
-                                                _ => return self.error(format!("{}", val))
+                                                _ => return self.error_at(format!("{}", val), self.tokens[return_to-1].line)
                                             }
                                             
                                         }
@@ -1239,9 +1250,9 @@ impl EconParser {
                                         if cst.1 {
                                             match val {
                                                 EconValue::Str(s) => {
-                                                    return self.error(format!("{}", s));
+                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
                                                 }
-                                                _ => return self.error(format!("{}", val))
+                                                _ => return self.error_at(format!("{}", val), self.tokens[return_to-1].line)
                                             }
                                             
                                         }
@@ -1289,13 +1300,13 @@ impl EconParser {
                                 self.current = cst.0;
         
                                 let temp_var = self.create_temp_var()?;
-                                if let EconValue::Str(ref s) = &temp_var.0 {
+                                if let EconValue::Str(ref tv) = &temp_var.0 {
                                     if let Some(ntu) = &str_to_use {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                        self.locals[self.depth as usize].insert(tv.clone(), 
                                             ntu.clone()
                                         );
                                     } else {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                        self.locals[self.depth as usize].insert(tv.clone(), 
                                             EconValue::Str(s.to_string())
                                         );
                                     }
@@ -1311,9 +1322,9 @@ impl EconParser {
                                         if cst.1 {
                                             match val {
                                                 EconValue::Str(s) => {
-                                                    return self.error(format!("{}", s));
+                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
                                                 }
-                                                _ => return self.error(format!("{}", val))
+                                                _ => return self.error_at(format!("{}", val), self.tokens[return_to-1].line)
                                             }
                                             
                                         }
@@ -1774,8 +1785,7 @@ impl EconParser {
                     self.consume(Token::LeftCurl, "Expected '{' after '@!'.".to_string())?;
                     
                     if let Token::Str(s) = self.peek().clone() {
-                        self.eat();
-                        self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                        self.eat();                        self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
                         let start_of = self.current;
                         
                         if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
@@ -1829,7 +1839,7 @@ impl EconParser {
         
         while !self.check(Token::RightCurl) && !self.at_end() {
             self.constraint_pre_process()?;
-            
+
             let key_val = self.expression()?;
             if let Some(_) = result.data.get(&key_val.0) {
                 return self.error("Duplicate Key.".to_string());
@@ -1859,14 +1869,12 @@ impl EconParser {
                 Ok(TokenData {
                     token: Token::EOF,
                     line: _,
-                    section: _
                 }) => {
                     break;
                 }
                 Ok(TokenData {
                     token: Token::Macro(mac),
                     line: _,
-                    section: _
                 }) => {
                     for i in mac.into_iter() {
                         if debug { println!("{}", i); }

@@ -42,7 +42,7 @@ mod tests {
         r#"
         {
             aa: "Hello,how,are,you",
-            a: string(map(chars($aa), x => $x == "," ? " " : $x))
+            a: to_string(map(chars($aa), x => $x == "," ? " " : $x))
         }
         "#, true);
 
@@ -97,7 +97,7 @@ mod tests {
         let obj = Econ::create(
         r#"
         {
-            @!{string, x => $x == "Hello World", "No Hello Worlds!"}
+            @!{ string, x => $x == "Hello World", "No Hello Worlds!"}
             a: "Hello World"
         }
         "#, true);
