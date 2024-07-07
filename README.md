@@ -116,6 +116,7 @@ nil
  - ``true``
  - ``false``
  - ``nil``
+ - ``inf`` - a constant for infinity. Divide by zero's will evaluate as infinity.
  - [Functions](#Functions)
 ## Operators
 **Econ** supports
@@ -254,7 +255,7 @@ a: $arr.(1+1) //outputs -> 3
 	"c": "Dill is 20 years old"
 }
 ```
->Note: ``.(key/index)`` and ``[key/index]`` function the same essentially. 
+>Note: ``.(key/index)`` and ``[key/index]`` are equivalent
 ### ``#`` Length operator
 Gets the length of an Object or Array.
 ```js
@@ -859,6 +860,23 @@ Line [0002]			@!{bool, x => $x == $x, "Use a string Yes/No rather than booleans.
 Line [0003]	->		a: true
 Line [0004] 	}
 ```
+### Example 3
+> Input
+```js
+{
+	@!{
+		number, 
+		x => ($x == inf) || ($x == -inf), 
+		"Divide by zero"
+	}
+	a: 1/0,
+	b: -1/0
+}
+```
+> Output
+```rust
+Line [0007] Error Parsing -> "Divide by zero"
+```
 
 # Econ Rust Api
 The proof-of-concept Api for **Econ** is written in *Rust*
@@ -917,5 +935,5 @@ r#"
     }
 }
 "#);
-assert_eq!(3f64, obj.get("a").get("b").get("c").get(2).value::<f64>());
+assert_eq!(3f64, obj["a"]["b"]["c"][2].value::<f64>());
 ```
