@@ -270,7 +270,6 @@ Referenced keys must not contain whitespace or any other reserved operators. Ref
 >Input
 ```js
 {
-	{
 	a: 10,
 	b: $a*2,
 	c: {
