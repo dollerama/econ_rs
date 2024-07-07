@@ -864,7 +864,7 @@ Line [0004] 	}
 # Econ Rust Api
 The proof-of-concept Api for **Econ** is written in *Rust*
 ## Create
-You can use the create function to parse either a file or string. Create can output debug info and will return ``Result<EconObj, String>`` where as ``Econ::from()`` will return an empty ``EconObj`` if it fails and will not output debug info. 
+You can use the create function to parse either a file or string. Create can output debug info and will return ``Result<EconObj, String>`` where as ``Econ::from()`` will return an empty ``EconObj`` if it fails and will not output debug info other than errors. 
 >Source
 ```rust
 let obj = Econ::create(
