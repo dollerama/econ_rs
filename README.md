@@ -730,7 +730,7 @@ A constraint macro will work on all values of a certain type that are in scope. 
 > Input 
 ```js
 {
-	@{number, x => ($x%2) == 0, "Even"}
+	@{number, x => $x%2 == 0, "Even"}
 	a: 2,
 	b: 3,
 	c: 4
