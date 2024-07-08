@@ -59,7 +59,7 @@ impl Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                vec!(EconValue::Obj(EconObj::new()))
+                                EconValue::Nil
                             }
                         }
                     }
@@ -70,7 +70,7 @@ impl Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                vec!(EconValue::Obj(EconObj::new()))
+                                EconValue::Nil
                             }
                         }
                     }
@@ -83,7 +83,7 @@ impl Econ {
                     }
                     Err(m) => {
                         eprintln!("{}", m);
-                        vec!(EconValue::Obj(EconObj::new()))
+                        EconValue::Nil
                     }
                 }
             }
