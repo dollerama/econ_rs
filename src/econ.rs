@@ -5,6 +5,18 @@ use crate::{lexer::EconLexer, object::EconObj, parser::EconParser, value::EconVa
 pub struct Econ;
 
 impl Econ {
+    /// create an EconValue
+    /// # Example
+    /// ```rust
+    /// let obj = Econ::create(
+    /// r#"
+    /// {
+    ///     a: 1,
+    ///     b: 2,
+    ///     c: 3
+    /// }
+    /// "#, true)
+    /// ```
     pub fn create(src: &str, debug: bool) -> Result<EconValue, String> {
         match PathBuf::from_str(src) {
             Ok(pb) => {
