@@ -210,14 +210,15 @@ impl<'a> EconLexer<'a> {
     
     fn string(&mut self) -> Result<TokenData, String> {
         while let Some(v) = self.peek() {
-            if v != "\"" {
+            if v == "\\" {
+                self.eat();
                 self.eat();
             } else {
-                if let Some("\\") = self.peek_prev() {
+                if v != "\"" {
                     self.eat();
-                    continue;
+                } else {
+                    break;
                 }
-                break;
             }
         }
         

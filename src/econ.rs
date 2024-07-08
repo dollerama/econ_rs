@@ -5,7 +5,7 @@ use crate::{lexer::EconLexer, object::EconObj, parser::EconParser, value::EconVa
 pub struct Econ;
 
 impl Econ {
-    pub fn create(src: &str, debug: bool) -> Result<Vec<EconValue>, String> {
+    pub fn create(src: &str, debug: bool) -> Result<EconValue, String> {
         match PathBuf::from_str(src) {
             Ok(pb) => {
                 let file = fs::read_to_string(pb);
@@ -48,7 +48,7 @@ impl Econ {
         }
     }
 
-    pub fn from(src: &str) -> Vec<EconValue> {
+    pub fn from(src: &str) -> EconValue {
         match PathBuf::try_from(src) {
             Ok(pb) => {
                 match fs::read_to_string(pb) {
@@ -59,7 +59,7 @@ impl Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                vec!(EconValue::Obj(EconObj::new()))
+                                EconValue::Nil
                             }
                         }
                     }
@@ -70,7 +70,7 @@ impl Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                vec!(EconValue::Obj(EconObj::new()))
+                                EconValue::Nil
                             }
                         }
                     }
@@ -83,7 +83,7 @@ impl Econ {
                     }
                     Err(m) => {
                         eprintln!("{}", m);
-                        vec!(EconValue::Obj(EconObj::new()))
+                        EconValue::Nil
                     }
                 }
             }
@@ -91,11 +91,12 @@ impl Econ {
     }
 
     pub fn to_struct<T: for<'a> serde::de::Deserialize<'a>>(obj: &EconValue) -> Result<T, String> {
-        if let EconValue::Obj(o) = obj {
+        if let EconValue::Obj(o) = &obj {
             let result: Result<T, serde_json::Error> = serde_json::from_str(o.stringify().as_str());
             result.map_err(|e| e.to_string())
         } else {
-            Err("Must recieve EconValue::Obj.".to_string())
+            let result: Result<T, serde_json::Error> = serde_json::from_str(format!("{}", obj).as_str());
+            result.map_err(|e| e.to_string())
         }
     }
 }

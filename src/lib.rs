@@ -43,7 +43,10 @@ mod tests {
     fn large_from_file() {
         //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/large-file.json").unwrap()).expect("JSON was not well-formatted");
         //println!("{}", a);
-        assert_eq!(true, matches!(Econ::create("test/large-file.json", true), Ok(_)));
+        if let Err(e) = Econ::create("test/large-file.json", false) {
+            panic!("{}", e);
+        }
+        assert_eq!(true, matches!(Econ::create("test/large-file.json", false), Ok(_)));
     }
 
     #[test]
@@ -99,7 +102,7 @@ mod tests {
             }
         }
         "#);
-        assert_eq!(3f64, obj[0]["a"]["b"]["c"][2].value::<f64>());
+        assert_eq!(3f64, obj["a"]["b"]["c"][2].value::<f64>());
     }
 
     #[test]
@@ -150,7 +153,7 @@ mod tests {
             y: 2+5
         }
         "#);
-        p = Econ::to_struct::<Point>(&obj[0]).unwrap();
+        p = Econ::to_struct::<Point>(&obj).unwrap();
         println!("{:?}", p);
     }
 }

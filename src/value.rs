@@ -324,7 +324,18 @@ impl fmt::Display for EconValue {
                 let b = EconObj::new();
                 write!(f, "[\n{}", b.get_string_from_arr(a, 0))
             }
-            _ => write!(f, "{:?}", self)
+            EconValue::Bool(b) => {
+                write!(f, "{}", b)
+            }
+            EconValue::Num(n) => {
+                write!(f, "{}", n)
+            }
+            EconValue::Str(s) => {
+                write!(f, "\"{}\"", s)
+            }
+            EconValue::Nil => {
+                write!(f, "nil")
+            }
         }
     }
 }
