@@ -1,4 +1,5 @@
 use std::{collections::HashMap, fmt};
+use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Function {
@@ -71,44 +72,50 @@ impl fmt::Display for TokenData {
     }
 }
 
-pub struct EconLexer {
+pub struct EconLexer<'a> {
     pub source: String,
     line: usize,
     start: usize,
     current: usize,
-    macros: HashMap<String, (Vec<TokenData>, Vec<TokenData>)>
+    macros: HashMap<String, (Vec<TokenData>, Vec<TokenData>)>,
+    source_as_vec: Vec<&'a str>
 }
 
-impl EconLexer {
-    pub fn init(source: &str) -> Self {
+impl<'a> EconLexer<'a> {
+    pub fn init(source: &'a str) -> Self {
         Self {
             source: String::from(source),
             start: 0,
             current: 0,
             line: 0,
-            macros: HashMap::new()
+            macros: HashMap::new(),
+            source_as_vec: source.graphemes(true).collect::<Vec<&'a str>>()
         }
     }
     
     fn error<T>(&self, msg: String) -> Result<T, String> {
         Err(format!("Line:[{:04}] -> Error Lexing -> {}", self.line, msg.clone()))
     }
-    
-    fn peek(&self) -> Option<char> {
-        self.source.chars().nth(self.current)
+
+    fn peek_prev(&self) -> Option<&str> {
+        self.source_as_vec.get(self.current-1).copied()
     }
     
-    fn peek_next(&self) -> Option<char> {
+    fn peek(&self) -> Option<&str> {
+        self.source_as_vec.get(self.current).copied()
+    }
+    
+    fn peek_next(&self) -> Option<&str> {
         if self.at_end() { 
             None
         } else {
-            self.source.chars().nth(self.current+1)
+            self.source_as_vec.get(self.current+1).copied()
         }
     }
     
-    fn advance(&mut self) -> Option<char> {
+    fn advance(&mut self) -> Option<&str> {
         self.current += 1;
-        self.source.chars().nth(self.current-1)
+        self.source_as_vec.get(self.current-1).copied()
     }
     
     fn eat(&mut self) {
@@ -122,12 +129,12 @@ impl EconLexer {
     fn skip_whitespace(&mut self) -> Result<(), String> {
         loop {
             match self.peek() {
-                Some(' ') | Some('\t') => { self.eat(); }
-                Some('/') => {
-                    if let Some('/') = self.peek_next() {
+                Some(" ") | Some("\t") => { self.eat(); }
+                Some("/") => {
+                    if let Some("/") = self.peek_next() {
                         loop {
                             self.eat();
-                            if let Some('\n') = self.peek() {
+                            if let Some("\n") = self.peek() {
                                 break;
                             }
                         }
@@ -135,7 +142,7 @@ impl EconLexer {
                         break;
                     }
                 }
-                Some('\n') => { 
+                Some("\n") => { 
                     self.line += 1;
                     self.eat(); 
                 }
@@ -147,11 +154,11 @@ impl EconLexer {
     }
      
     fn at_end(&self) -> bool {
-        self.source.chars().nth(self.current).is_none()
+        self.source_as_vec.get(self.current).is_none()
     }
     
-    fn is_digit(c: char) -> bool {
-        c >= '0' && c <= '9'
+    fn is_digit(c: &str) -> bool {
+        c >= "0" && c <= "9"
     }
     
     fn number(&mut self) -> Result<TokenData, String> {
@@ -168,7 +175,7 @@ impl EconLexer {
         }
         
         if let (Some(v), Some(n)) = (self.peek(), self.peek_next()) {
-            if v == '.' && Self::is_digit(n) {
+            if v == "." && Self::is_digit(n) {
                 self.eat();
                 
                 loop {
@@ -185,7 +192,11 @@ impl EconLexer {
             }
         }
         
-        let string_to_use = String::from(&self.source[self.start..self.current]).parse::<f64>();
+        let mut build = String::from("");
+        for i in self.start..self.current {
+            build.push_str(self.source_as_vec[i]);
+        }
+        let string_to_use = build.parse::<f64>();
             
         match string_to_use {
             Ok(val) => {
@@ -199,9 +210,13 @@ impl EconLexer {
     
     fn string(&mut self) -> Result<TokenData, String> {
         while let Some(v) = self.peek() {
-            if v != '"' {
+            if v != "\"" {
                 self.eat();
             } else {
+                if let Some("\\") = self.peek_prev() {
+                    self.eat();
+                    continue;
+                }
                 break;
             }
         }
@@ -210,15 +225,19 @@ impl EconLexer {
             self.error("Unterminated String.".to_string())
         } else {
             self.eat();
-            self.make_token(Token::Str(String::from(&self.source[self.start+1..self.current-1])))
+            let mut build = String::from("");
+            for i in self.start+1..self.current-1 {
+                build.push_str(self.source_as_vec[i]);
+            }
+            self.make_token(Token::Str(String::from(build)))
         }
     }
     
     fn variable(&mut self) -> Result<TokenData, String> {
         while let Some(v) = self.peek() {
-            if let '/' | '*' | '+' | '-' | '(' | ')' | ' ' 
-            | '\n' | '.' | ',' | '[' | ']' | ';' | ':' 
-            | '|' | '@' | '%' = v {
+            if let "/" | "*" | "+" | "-" | "(" | ")" | " " 
+            | "\n" | "." | "," | "[" | "]" | ";" | ":" 
+            | "|" | "@" | "%" = v {
                 break;
             } else {
                 self.eat();
@@ -229,13 +248,13 @@ impl EconLexer {
             self.error("Unterminated Variable.".to_string())
         } else {
             let mut search = 0;
-            while let Some(v) = self.source.chars().nth(self.start) {
-                if let '!' = v {
+            while let Some(v) = self.source.graphemes(true).nth(self.start) {
+                if let "!" = v {
                     search = -1;
                     break;
                 }
             
-                if let '$' = v {
+                if let "$" = v {
                     search += 1;
                 } else {
                     self.start -= 1;
@@ -244,8 +263,11 @@ impl EconLexer {
                 }
                 self.start += 1;
             }
-        
-            Ok(TokenData{ token: Token::Var((search, String::from(&self.source[self.start+1..self.current]))), line: self.line})
+            let mut build = String::from("");
+            for i in self.start+1..self.current {
+                build.push_str(self.source_as_vec[i]);
+            }
+            Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
         }
     }
     
@@ -254,38 +276,43 @@ impl EconLexer {
             if !Self::is_alpha(v) { break; }
             self.eat();
         }
+
+        let mut build = String::from("");
+        for i in self.start..self.current {
+            build.push_str(self.source_as_vec[i]);
+        }
         
-        if &self.source[self.start..self.current] == "true" {
+        if build == "true" {
             self.make_token(Token::Bool(true))
-        } else if &self.source[self.start..self.current] == "false" {
+        } else if build == "false" {
             self.make_token(Token::Bool(false))
-        } else if &self.source[self.start..self.current] == "nil" {
+        } else if build == "nil" {
             self.make_token(Token::Nil)
-        } else if &self.source[self.start..self.current] == "not" {
+        } else if build == "not" {
             self.make_token(Token::Not)
-        } else if &self.source[self.start..self.current] == "or" {
+        } else if build == "or" {
             self.make_token(Token::Or)
-        } else if &self.source[self.start..self.current] == "and" {
+        } else if build == "and" {
             self.make_token(Token::And)
-        } else if &self.source[self.start..self.current] == "inf" {
+        } else if build == "inf" {
             self.make_token(Token::Num(f64::INFINITY))
-        } else if &self.source[self.start..self.current] == "filter" {
+        } else if build == "filter" {
             self.make_token(Token::Fn(Function::Filter))
-        } else if &self.source[self.start..self.current] == "map" {
+        } else if build == "map" {
             self.make_token(Token::Fn(Function::Map))
-        } else if &self.source[self.start..self.current] == "chars" {
+        } else if build == "chars" {
             self.make_token(Token::Fn(Function::Chars))
-        } else if &self.source[self.start..self.current] == "to_string" {
+        } else if build == "to_string" {
             self.make_token(Token::Fn(Function::ToString))
-        } else if &self.source[self.start..self.current] == "keys" {
+        } else if build == "keys" {
             self.make_token(Token::Fn(Function::Keys))
-        } else if &self.source[self.start..self.current] == "values" {
+        } else if build == "values" {
             self.make_token(Token::Fn(Function::Values))
-        } else if &self.source[self.start..self.current] == "fold" {
+        } else if build == "fold" {
             self.make_token(Token::Fn(Function::Fold))
-        } else if &self.source[self.start..self.current] == "sort" {
+        } else if build == "sort" {
             self.make_token(Token::Fn(Function::Sort))
-        } else if &self.source[self.start..self.current] == "zip" {
+        } else if build == "zip" {
             self.make_token(Token::Fn(Function::Zip))
         } else {
             while let Some(v) = self.peek() {
@@ -293,7 +320,11 @@ impl EconLexer {
                 self.eat();
             }
             
-            self.make_token(Token::Str(String::from(&self.source[self.start..self.current])))
+            let mut build = String::from("");
+            for i in self.start..self.current {
+                build.push_str(self.source_as_vec[i]);
+            }
+            self.make_token(Token::Str(build))
         }
     }
 
@@ -308,12 +339,12 @@ impl EconLexer {
             };
             
             if let Some(m) = macro_obj {
-                if let Some('(') = self.peek() {
+                if let Some("(") = self.peek() {
                     self.eat();
                     
                     let mut groupings = vec!();
 
-                    if let Some(')') = self.peek() {
+                    if let Some(")") = self.peek() {
                         self.eat();
                     } else {
                         let mut current_group = vec!();
@@ -395,12 +426,12 @@ impl EconLexer {
                     self.error(format!("Expect '(' after Macro {}.", s))
                 }
             } else {
-                if let Some('(') = self.peek() {
+                if let Some("(") = self.peek() {
                     self.eat();
                     
                     let mut params = Vec::<TokenData>::new();
                 
-                    if let Some(')') = self.peek() {
+                    if let Some(")") = self.peek() {
                         self.eat();
                     } else {
                         loop {
@@ -421,18 +452,18 @@ impl EconLexer {
                     
                     let mut stream = vec!();
                     loop {
-                        while let Some(' ') | Some('\t') = self.peek() {
+                        while let Some(" ") | Some("\t") = self.peek() {
                             self.eat();
                         }
                         self.start = self.current;
                         
-                        if let Some('\\') = self.peek() {
+                        if let Some("\\") = self.peek() {
                             self.eat(); 
                             self.skip_whitespace()?;
                             self.start = self.current;
                         }
                         
-                        if let Some('\n') = self.peek() {
+                        if let Some("\n") = self.peek() {
                             break;
                         }
                         
@@ -452,10 +483,10 @@ impl EconLexer {
         }
     }
      
-    fn is_alpha(c: char) -> bool {
-        (c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        c == '_'
+    fn is_alpha(c: &str) -> bool {
+        (c >= "a" && c <= "z") ||
+        (c >= "A" && c <= "Z") ||
+        c == "_"
     }
     
     pub fn scan(&mut self) -> Result<TokenData, String> {
@@ -466,83 +497,83 @@ impl EconLexer {
             self.make_token(Token::EOF)
         } else {
             match self.advance() {
-                Some('{') => { self.make_token(Token::LeftCurl) }
-                Some('}') => { self.make_token(Token::RightCurl) }
-                Some('[') => { self.make_token(Token::LeftBracket) }
-                Some(']') => { self.make_token(Token::RightBracket) }
-                Some('(') => { self.make_token(Token::LeftParen) }
-                Some(')') => { self.make_token(Token::RightParen) }
-                Some(',') => { self.make_token(Token::Comma) }
-                Some(':') => { self.make_token(Token::Colon) }
-                Some('+') => { self.make_token(Token::Plus) }
-                Some('-') => { self.make_token(Token::Minus) }
-                Some(';') => { self.make_token(Token::SemiColon) }
-                Some('?') => { self.make_token(Token::Question) }
-                Some('*') => { self.make_token(Token::Mult) }
-                Some('/') => { self.make_token(Token::Div) }
-                Some('.') => { self.make_token(Token::Dot) }
-                Some('\\') => { self.make_token(Token::BackSlash) }
-                Some('#') => { self.make_token(Token::Sharp) }
-                Some('%') => { self.make_token(Token::Percent) }
-                Some('=') => {
+                Some("{") => { self.make_token(Token::LeftCurl) }
+                Some("}") => { self.make_token(Token::RightCurl) }
+                Some("[") => { self.make_token(Token::LeftBracket) }
+                Some("]") => { self.make_token(Token::RightBracket) }
+                Some("(") => { self.make_token(Token::LeftParen) }
+                Some(")") => { self.make_token(Token::RightParen) }
+                Some(",") => { self.make_token(Token::Comma) }
+                Some(":") => { self.make_token(Token::Colon) }
+                Some("+") => { self.make_token(Token::Plus) }
+                Some("-") => { self.make_token(Token::Minus) }
+                Some(";") => { self.make_token(Token::SemiColon) }
+                Some("?") => { self.make_token(Token::Question) }
+                Some("*") => { self.make_token(Token::Mult) }
+                Some("/") => { self.make_token(Token::Div) }
+                Some(".") => { self.make_token(Token::Dot) }
+                Some("\\") => { self.make_token(Token::BackSlash) }
+                Some("#") => { self.make_token(Token::Sharp) }
+                Some("%") => { self.make_token(Token::Percent) }
+                Some("=") => {
                     match self.peek() {
-                        Some('=') => {
+                        Some("=") => {
                             self.eat();
                             self.make_token(Token::Equal)
                         }
-                        Some('>') => {
+                        Some(">") => {
                             self.eat();
                             self.make_token(Token::Arrow)
                         }
                         _ => { self.error("Unexpected Token.".to_string()) }
                     }
                 }
-                Some('&') => {
-                    if let Some('&') = self.peek() {
+                Some("&") => {
+                    if let Some("&") = self.peek() {
                         self.eat();
                         self.make_token(Token::And)
                     } else {
                         self.error("Unexpected Token.".to_string())
                     }
                 }
-                Some('|') => {
-                    if let Some('|') = self.peek() {
+                Some("|") => {
+                    if let Some("|") = self.peek() {
                         self.eat();
                         self.make_token(Token::Or)
                     } else {
                         self.make_token(Token::Pipe)
                     }
                 }
-                Some('~') => {
-                    if let Some('=') = self.peek() {
+                Some("~") => {
+                    if let Some("=") = self.peek() {
                         self.eat();
                         self.make_token(Token::NotEqual)
                     } else {
                         self.make_token(Token::Not)
                     }
                 }
-                Some('>') => {
-                    if let Some('=') = self.peek() {
+                Some(">") => {
+                    if let Some("=") = self.peek() {
                         self.eat();
                         self.make_token(Token::GreaterEqual)
                     } else {
                         self.make_token(Token::Greater)
                     }
                 }
-                Some('<') => {
-                    if let Some('=') = self.peek() {
+                Some("<") => {
+                    if let Some("=") = self.peek() {
                         self.eat();
                         self.make_token(Token::LessEqual)
                     } else {
                         self.make_token(Token::Less)
                     }
                 }
-                Some('@') => { 
+                Some("@") => { 
                     match self.peek() {
-                        Some('{') => {
+                        Some("{") => {
                             self.make_token(Token::ConstraintMacro)
                         }
-                        Some('!') => {
+                        Some("!") => {
                             self.eat();
                             self.make_token(Token::ErrorMacro)
                         }
@@ -551,18 +582,22 @@ impl EconLexer {
                         }
                     }
                 }
-                Some('"') => { self.string() }
-                Some('$') | Some('!') => { self.variable() }
+                Some("\"") => { self.string() }
+                Some("$") | Some("!") => { self.variable() }
                 Some(v) => {
                     if Self::is_digit(v) {
                         self.number()
                     } else if Self::is_alpha(v)  {
                         self.keyword()
                     } else {
-                        self.error("Unexpected Token.".to_string())
+                        let v2 = self.peek();
+                        self.error(format!("Unexpected Token got {:?}.", v2))
                     }
                 }
-                _ => { self.error("Unexpected Token.".to_string()) }
+                _ => { 
+                    let v2 = self.peek();
+                    self.error(format!("Unexpected Token got {:?}.", v2)) 
+                }
             }
         }
     }

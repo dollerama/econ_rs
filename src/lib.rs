@@ -6,10 +6,11 @@ pub mod parser;
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::PathBuf, str::FromStr};
+    use std::{fmt::Debug, fs, path::PathBuf, str::FromStr};
 
     use econ::Econ;
     use object::Access;
+    use serde::{Deserialize, Serialize};
 
     use super::*;
 
@@ -33,7 +34,16 @@ mod tests {
 
     #[test]
     fn complex_from_file() {
+        //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/Complex.econ").unwrap()).expect("JSON was not well-formatted");
+        //println!("{}", a);
         assert_eq!(true, matches!(Econ::create("test/Complex.econ", true), Ok(_)));
+    }
+
+    #[test]
+    fn large_from_file() {
+        //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/large-file.json").unwrap()).expect("JSON was not well-formatted");
+        //println!("{}", a);
+        assert_eq!(true, matches!(Econ::create("test/large-file.json", true), Ok(_)));
     }
 
     #[test]
@@ -89,7 +99,7 @@ mod tests {
             }
         }
         "#);
-        assert_eq!(3f64, obj["a"]["b"]["c"][2].value::<f64>());
+        assert_eq!(3f64, obj[0]["a"]["b"]["c"][2].value::<f64>());
     }
 
     #[test]
@@ -122,6 +132,26 @@ mod tests {
         "#, true);
         
         assert_eq!(true, matches!(obj, Ok(_)));
+    }
+
+    #[test]
+    fn econ_deserialize() {
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Point {
+            x: f64,
+            y: f64
+        }
+
+        let mut p = Point {x: 0.0, y: 0.0};
+        let obj = Econ::from(
+        r#"
+        {
+            x: 1+1,
+            y: 2+5
+        }
+        "#);
+        p = Econ::to_struct::<Point>(&obj[0]).unwrap();
+        println!("{:?}", p);
     }
 }
 

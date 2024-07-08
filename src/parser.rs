@@ -1459,7 +1459,8 @@ impl EconParser {
     }
     
     fn val_expression(&mut self) -> Result<EconValue, String> {
-        self.equality()
+        let val = self.equality()?;
+        self.check_val_with_constraint(val)
     }
     
     fn array_value(&mut self) -> Result<EconValue, String> {
@@ -1471,8 +1472,7 @@ impl EconParser {
         
         while !self.check(Token::RightBracket) && !self.at_end() {
             let val = self.array_value()?;
-            let checked_value = self.check_val_with_constraint(val)?;
-            result.push(checked_value);
+            result.push(val);
             if !self.check(Token::RightBracket) {
                 self.consume(Token::Comma, "Expect ','.".to_string())?;  
             }
@@ -1897,9 +1897,8 @@ impl EconParser {
             if let Some(_) = result.data.get(&key_val.0) {
                 return self.error("Duplicate Key.".to_string());
             } else {
-                let checked_value = self.check_val_with_constraint(key_val.1)?;
-                result.data.insert(key_val.0.clone(), checked_value.clone());
-                self.locals[self.depth as usize].insert(key_val.0, checked_value);
+                result.data.insert(key_val.0.clone(), key_val.1.clone());
+                self.locals[self.depth as usize].insert(key_val.0, key_val.1);
             }
             if !self.check(Token::RightCurl) {
                 self.consume(Token::Comma, "Expect ','.".to_string())?;  
@@ -1909,7 +1908,7 @@ impl EconParser {
         Ok(EconValue::Obj(result))
     }
 
-    pub fn parse(&mut self, lexer: &mut EconLexer, debug: bool) -> Result<EconValue, String> {
+    pub fn parse(&mut self, lexer: &mut EconLexer, debug: bool) -> Result<Vec<EconValue>, String> {
         if debug {  
             println!("----Src----"); 
             println!("{}", lexer.source);
@@ -1954,23 +1953,38 @@ impl EconParser {
             println!("----Parse----"); 
         }
 
-        match self.object() {
-            Ok(value) => {
-                match value {
-                    EconValue::Obj(v) => {
-                        if debug { 
-                            println!("[Completed in {} ms]", now.elapsed().as_millis()); 
-                            println!("{}", &v);
+        let mut result = vec!();
+        let mut many = false;
+        loop {
+            many = self.match_single(Token::LeftBracket);
+            match self.object() {
+                Ok(value) => {
+                    match value {
+                        EconValue::Obj(v) => {
+                            if debug { 
+                                println!("[Completed in {} ms]", now.elapsed().as_millis()); 
+                                println!("{}", &v);
+                            }
+                            if !many {
+                                return Ok(vec!(EconValue::Obj(v)));
+                            } else {
+                                result.push(EconValue::Obj(v));
+                            }
                         }
-                        
-                        Ok(EconValue::Obj(v))
-                    }
-                    _ => {
-                        self.error(String::from("Object not found."))
+                        _ => {
+                            return self.error(String::from("Object not found."));
+                        }
                     }
                 }
+                Err(e) => { return Err(e); }
             }
-            Err(e) => Err(e)
+            if self.match_single(Token::RightBracket) {
+                break;
+            } else {
+                self.consume(Token::Comma, "Expected ','".to_string());
+            }
         }
+
+        Ok(result)
     }
 }

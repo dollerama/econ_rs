@@ -1,11 +1,11 @@
-use std::{fs, path::PathBuf, str::FromStr};
+use std::{fs, path::PathBuf, result, str::FromStr};
 
 use crate::{lexer::EconLexer, object::EconObj, parser::EconParser, value::EconValue};
 
 pub struct Econ;
 
 impl Econ {
-    pub fn create(src: &str, debug: bool) -> Result<EconValue, String> {
+    pub fn create(src: &str, debug: bool) -> Result<Vec<EconValue>, String> {
         match PathBuf::from_str(src) {
             Ok(pb) => {
                 let file = fs::read_to_string(pb);
@@ -48,7 +48,7 @@ impl Econ {
         }
     }
 
-    pub fn from(src: &str) -> EconValue {
+    pub fn from(src: &str) -> Vec<EconValue> {
         match PathBuf::try_from(src) {
             Ok(pb) => {
                 match fs::read_to_string(pb) {
@@ -59,7 +59,7 @@ impl Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                EconValue::Obj(EconObj::new())
+                                vec!(EconValue::Obj(EconObj::new()))
                             }
                         }
                     }
@@ -70,7 +70,7 @@ impl Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                EconValue::Obj(EconObj::new())
+                                vec!(EconValue::Obj(EconObj::new()))
                             }
                         }
                     }
@@ -83,10 +83,19 @@ impl Econ {
                     }
                     Err(m) => {
                         eprintln!("{}", m);
-                        EconValue::Obj(EconObj::new())
+                        vec!(EconValue::Obj(EconObj::new()))
                     }
                 }
             }
+        }
+    }
+
+    pub fn to_struct<T: for<'a> serde::de::Deserialize<'a>>(obj: &EconValue) -> Result<T, String> {
+        if let EconValue::Obj(o) = obj {
+            let result: Result<T, serde_json::Error> = serde_json::from_str(o.stringify().as_str());
+            result.map_err(|e| e.to_string())
+        } else {
+            Err("Must recieve EconValue::Obj.".to_string())
         }
     }
 }
