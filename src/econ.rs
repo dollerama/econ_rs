@@ -1,11 +1,11 @@
 use std::{fs, path::PathBuf, str::FromStr};
 
-use crate::{lexer::EconLexer, object::EconObj, parser::EconParser};
+use crate::{lexer::EconLexer, object::EconObj, parser::EconParser, value::EconValue};
 
-pub type Econ = EconObj;
+pub struct Econ;
 
 impl Econ {
-    pub fn create(src: &str, debug: bool) -> Result<EconObj, String> {
+    pub fn create(src: &str, debug: bool) -> Result<EconValue, String> {
         match PathBuf::from_str(src) {
             Ok(pb) => {
                 let file = fs::read_to_string(pb);
@@ -47,10 +47,8 @@ impl Econ {
             }
         }
     }
-}
 
-impl From<&str> for Econ {
-    fn from(src: &str) -> Econ {
+    pub fn from(src: &str) -> EconValue {
         match PathBuf::try_from(src) {
             Ok(pb) => {
                 match fs::read_to_string(pb) {
@@ -61,7 +59,7 @@ impl From<&str> for Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                EconObj::new()
+                                EconValue::Obj(EconObj::new())
                             }
                         }
                     }
@@ -72,7 +70,7 @@ impl From<&str> for Econ {
                             }
                             Err(m) => {
                                 eprintln!("{}", m);
-                                EconObj::new()
+                                EconValue::Obj(EconObj::new())
                             }
                         }
                     }
@@ -85,32 +83,9 @@ impl From<&str> for Econ {
                     }
                     Err(m) => {
                         eprintln!("{}", m);
-                        EconObj::new()
+                        EconValue::Obj(EconObj::new())
                     }
                 }
-            }
-        }
-    }
-}
-
-impl From<PathBuf> for Econ {
-    fn from(p: PathBuf) -> Self {
-        let file = fs::read_to_string(p);
-        match file {
-            Ok(src) => {
-                match Self::create(&src, false) {
-                    Ok(v) => {
-                        v
-                    }
-                    Err(m) => {
-                        eprintln!("{}", m);
-                        EconObj::new()
-                    }
-                }
-            }
-            Err(e) => {
-                eprintln!("{}", e);
-                EconObj::new()
             }
         }
     }

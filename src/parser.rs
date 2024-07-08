@@ -116,7 +116,7 @@ impl EconParser {
         let mut left = self.comparison()?;
         
         loop {
-            match self.peek().clone() {
+            match self.peek() {
                 Token::Equal => {
                     self.eat();
                     let right = self.comparison()?;
@@ -131,7 +131,7 @@ impl EconParser {
                         (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) => {
                             EconValue::Bool(n1==n2)
                         }
-                        _ => return self.error("Invalid comparison of types".to_string())
+                        _ => return self.error(format!("Invalid '==' of types: {}+{}", left, right))
                     };
                 }
                 Token::NotEqual => {
@@ -148,7 +148,7 @@ impl EconParser {
                         (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) => {
                             EconValue::Bool(n1!=n2)
                         }
-                        _ => return self.error("Invalid comparison of types.".to_string())
+                        _ => return self.error(format!("Invalid '~=' of types: {}+{}", left, right))
                     };
                 }
                 Token::Question => {
@@ -164,7 +164,7 @@ impl EconParser {
                         &EconValue::Bool(false) => {
                             right2
                         }
-                        _ => return self.error("Expected Bool from ?.".to_string())
+                        _ => return self.error(format!("Invalid ternary expected bool got: {}", left))
                     };
                 }
                 _ => { break; }
@@ -188,13 +188,11 @@ impl EconParser {
                             EconValue::Bool(*n1 < *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = false;
+                            let mut  res: bool = true;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = c2 as u32 - 48 < c as u32 - 48;
-                                    if res == true {
-                                        break;
-                                    }
+                                    res = c2 as u32 - 48 > c as u32 - 48;
+                                    break;
                                 } else {
                                     break;
                                 }
@@ -202,7 +200,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error("Invalid comparison of types.".to_string())
+                        _ => return self.error(format!("Invalid '<' of types: {}+{}", left, right))
                     };
                 }
                 Token::Greater => {
@@ -213,13 +211,11 @@ impl EconParser {
                             EconValue::Bool(*n1 > *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = false;
+                            let mut  res: bool = true;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = (c2 as u32 - 48) > c as u32 - 48;
-                                    if res == true {
-                                        break;
-                                    }
+                                    res = (c2 as u32 - 48) < c as u32 - 48;
+                                    break;
                                 } else {
                                     break;
                                 }
@@ -227,7 +223,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error("Invalid comparison of types.".to_string())
+                        _ => return self.error(format!("Invalid '>' of types: {}+{}", left, right))
                     };
                 }
                 Token::GreaterEqual => {
@@ -238,13 +234,11 @@ impl EconParser {
                             EconValue::Bool(*n1 >= *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = false;
+                            let mut  res: bool = true;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = (c2 as u32 - 48) >= c as u32 - 48;
-                                    if res == true {
-                                        break;
-                                    }
+                                    res = (c2 as u32 - 48) < c as u32 - 48;
+                                    break;
                                 } else {
                                     break;
                                 }
@@ -252,7 +246,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error("Invalid comparison of types.".to_string())
+                        _ => return self.error(format!("Invalid '>=' of types: {}+{}", left, right))
                     };
                 }
                 Token::LessEqual => {
@@ -263,13 +257,11 @@ impl EconParser {
                             EconValue::Bool(*n1 <= *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = false;
+                            let mut  res: bool = true;
                             for (i, c) in n1.chars().enumerate() {
                                 if let Some(c2) = n2.chars().nth(i) {
-                                    res = c2 as u32 - 48 <= c as u32 - 48;
-                                    if res == true {
-                                        break;
-                                    }
+                                    res = c2 as u32 - 48 > c as u32 - 48;
+                                    break;
                                 } else {
                                     break;
                                 }
@@ -277,7 +269,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error("Invalid comparison of types.".to_string())
+                        _ => return self.error(format!("Invalid '<=' of types: {}+{}", left, right))
                     };
                 }
                 Token::And => {
@@ -401,7 +393,7 @@ impl EconParser {
                             
                             EconValue::Obj(new_obj)
                         }
-                        _ => return self.error("Invalid addition of types.".to_string())
+                        _ => return self.error(format!("Invalid addition of types: {}+{}", left, right))
                     };
                 }
                 Token::BackSlash => {
@@ -430,7 +422,7 @@ impl EconParser {
                         (&EconValue::Bool(ref n1), &EconValue::Str(ref n2)) =>  {
                             EconValue::Str(format!("{}\n{}", n1, n2))
                         }
-                        _ => return self.error("Invalid concatenation of types.".to_string())
+                        _ => return self.error(format!("Invalid concatenation of types: {}+{}", left, right))
                     };
                 }
                 Token::Minus => {
@@ -441,7 +433,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1-n2)
                         }
-                        _ => return self.error("Invalid subtraction of types.".to_string())
+                        _ => return self.error(format!("Invalid subtraction of types: {}+{}", left, right))
                     };
                 }
                 _ => {
@@ -466,7 +458,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1*n2)
                         }
-                        _ => return self.error("Invalid multiplication of types.".to_string())
+                        _ => return self.error(format!("Invalid '*' of types: {}+{}", left, right))
                     };
                 }
                 Token::Div => {
@@ -477,7 +469,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1/n2)
                         }
-                        _ => return self.error("Invalid division of types.".to_string())
+                        _ => return self.error(format!("Invalid '/' of types: {}+{}", left, right))
                     };
                 }
                 Token::Percent => {
@@ -488,7 +480,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1.rem_euclid(*n2))
                         }
-                        _ => return self.error("Invalid modulus of types.".to_string())
+                        _ => return self.error(format!("Invalid '%' of types: {}+{}", left, right))
                     };
                 }
                 _ => {
@@ -536,7 +528,7 @@ impl EconParser {
                     &EconValue::Obj(ref n1) => {
                         Ok(EconValue::Num(n1.data.keys().len() as f64))
                     }
-                    _ => return self.error("Invalid measurement of type.".to_string())
+                    _ => return self.error(format!("Invalid '#' of type: {}", right))
                 }
             }
             _ => {
@@ -1067,290 +1059,19 @@ impl EconParser {
             }
             Token::Nil => {
                 self.eat();
-
-                if !self.in_constraint {
-                    let mut nil_to_use : Option<EconValue> = None;
-
-                    for depth in (0..=self.depth).rev() {
-                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("nil") {
-                            Some(cv.clone())
-                        } else {
-                            None
-                        };
-        
-                        if let Some(cv) = constr_vec {
-                            self.in_constraint = true;
-                            for cst in cv.iter() {
-                                let return_to = self.current;
-                                self.current = cst.0;
-        
-                                let temp_var = self.create_temp_var()?;
-                                if let EconValue::Str(ref s) = &temp_var.0 {
-                                    if let Some(ntu) = &nil_to_use {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
-                                            ntu.clone()
-                                        );
-                                    } else {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
-                                            EconValue::Nil
-                                        );
-                                    }
-                                }
-                                
-                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
-                                let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
-                                let val = self.val_expression()?;
-                                
-                                match condition {
-                                    EconValue::Nil => {
-                                        if cst.1 {
-                                            match val {
-                                                EconValue::Str(s) => {
-                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
-                                                }
-                                                _ => return self.error_at(format!("{}", val),self.tokens[return_to-1].line)
-                                            }
-                                            
-                                        }
-                                        nil_to_use = Some(val);
-                                    }
-                                    _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
-                                    }
-                                }
-    
-                                self.restore_temp_var(temp_var);
-                                self.current = return_to;
-                            }
-                            self.in_constraint = false;
-                        }
-                    }
-                    
-                    if let Some(value_to_use) = nil_to_use {
-                        Ok(value_to_use)
-                    } else {
-                        Ok(EconValue::Nil)
-                    }
-                } else {
-                    Ok(EconValue::Nil)
-                }
+                Ok(EconValue::Nil)
             }
             Token::Num(n) => {
                 self.eat();
-
-                if !self.in_constraint {
-                    let mut num_to_use : Option<EconValue> = None;
-
-                    for depth in (0..=self.depth).rev() {
-                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("number") {
-                            Some(cv.clone())
-                        } else {
-                            None
-                        };
-        
-                        if let Some(cv) = constr_vec {
-                            self.in_constraint = true;
-                            for cst in cv.iter() {
-                                let return_to = self.current;
-                                self.current = cst.0;
-        
-                                let temp_var = self.create_temp_var()?;
-                                if let EconValue::Str(ref s) = &temp_var.0 {
-                                    if let Some(ntu) = &num_to_use {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
-                                            ntu.clone()
-                                        );
-                                    } else {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
-                                            EconValue::Num(n)
-                                        );
-                                    }
-                                }
-                                
-                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
-                                let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
-                                let val = self.val_expression()?;
-                                
-                                match condition {
-                                    EconValue::Bool(true) => {
-                                        if cst.1 {
-                                            match val {
-                                                EconValue::Str(s) => {
-                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
-                                                }
-                                                _ => return self.error_at(format!("{}", val), self.tokens[return_to-1].line)
-                                            }
-                                            
-                                        }
-                                        num_to_use = Some(val);
-                                    }
-                                    EconValue::Bool(false) => { }
-                                    _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
-                                    }
-                                }
-    
-                                self.restore_temp_var(temp_var);
-                                self.current = return_to;
-                            }
-                            self.in_constraint = false;
-                        }
-                    }
-                    
-                    if let Some(value_to_use) = num_to_use {
-                        Ok(value_to_use)
-                    } else {
-                        Ok(EconValue::Num(n))
-                    }
-                } else {
-                    Ok(EconValue::Num(n))
-                }
+                Ok(EconValue::Num(n))
             }
             Token::Bool(b) => {
                 self.eat();
-
-                if !self.in_constraint {
-                    let mut bool_to_use : Option<EconValue> = None;
-
-                    for depth in (0..=self.depth).rev() {
-                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("bool") {
-                            Some(cv.clone())
-                        } else {
-                            None
-                        };
-        
-                        if let Some(cv) = constr_vec {
-                            self.in_constraint = true;
-                            for cst in cv.iter() {
-                                let return_to = self.current;
-                                self.current = cst.0;
-        
-                                let temp_var = self.create_temp_var()?;
-                                if let EconValue::Str(ref s) = &temp_var.0 {
-                                    if let Some(ntu) = &bool_to_use {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
-                                            ntu.clone()
-                                        );
-                                    } else {
-                                        self.locals[self.depth as usize].insert(s.clone(), 
-                                            EconValue::Bool(b)
-                                        );
-                                    }
-                                }
-                                
-                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
-                                let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
-                                let val = self.val_expression()?;
-                                
-                                match condition {
-                                    EconValue::Bool(true) => {
-                                        if cst.1 {
-                                            match val {
-                                                EconValue::Str(s) => {
-                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
-                                                }
-                                                _ => return self.error_at(format!("{}", val), self.tokens[return_to-1].line)
-                                            }
-                                            
-                                        }
-                                        bool_to_use = Some(val);
-                                    }
-                                    EconValue::Bool(false) => { }
-                                    _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
-                                    }
-                                }
-    
-                                self.restore_temp_var(temp_var);
-                                self.current = return_to;
-                            }
-                            self.in_constraint = false;
-                        }
-                    }
-                    
-                    if let Some(value_to_use) = bool_to_use {
-                        Ok(value_to_use)
-                    } else {
-                        Ok(EconValue::Bool(b))
-                    }
-                } else {
-                    Ok(EconValue::Bool(b))
-                }
+                Ok(EconValue::Bool(b))
             }
             Token::Str(s) => {
                 self.eat();
-
-                if !self.in_constraint {
-                    let mut str_to_use : Option<EconValue> = None;
-
-                    for depth in (0..=self.depth).rev() {
-                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("string") {
-                            Some(cv.clone())
-                        } else {
-                            None
-                        };
-        
-                        if let Some(cv) = constr_vec {
-                            self.in_constraint = true;
-                            for cst in cv.iter() {
-                                let return_to = self.current;
-                                self.current = cst.0;
-        
-                                let temp_var = self.create_temp_var()?;
-                                if let EconValue::Str(ref tv) = &temp_var.0 {
-                                    if let Some(ntu) = &str_to_use {
-                                        self.locals[self.depth as usize].insert(tv.clone(), 
-                                            ntu.clone()
-                                        );
-                                    } else {
-                                        self.locals[self.depth as usize].insert(tv.clone(), 
-                                            EconValue::Str(s.to_string())
-                                        );
-                                    }
-                                }
-                                
-                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
-                                let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
-                                let val = self.val_expression()?;
-                                
-                                match condition {
-                                    EconValue::Bool(true) => {
-                                        if cst.1 {
-                                            match val {
-                                                EconValue::Str(s) => {
-                                                    return self.error_at(format!("{}", s), self.tokens[return_to-1].line);
-                                                }
-                                                _ => return self.error_at(format!("{}", val), self.tokens[return_to-1].line)
-                                            }
-                                            
-                                        }
-                                        str_to_use = Some(val);
-                                    }
-                                    EconValue::Bool(false) => { }
-                                    _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
-                                    }
-                                }
-    
-                                self.restore_temp_var(temp_var);
-                                self.current = return_to;
-                            }
-                            self.in_constraint = false;
-                        }
-                    }
-                    
-                    if let Some(value_to_use) = str_to_use {
-                        Ok(value_to_use)
-                    } else {
-                        Ok(EconValue::Str(s))
-                    }
-                } else {
-                    Ok(EconValue::Str(s))
-                }
+                Ok(EconValue::Str(s))
             }
             Token::LeftCurl => {
                 self.eat();
@@ -1677,14 +1398,7 @@ impl EconParser {
     }
     
     fn array_value(&mut self) -> Result<EconValue, String> {
-        match self.peek().clone() {
-            Token::Num(_) | Token::Var(_) | Token::Str(_) | Token::LeftParen 
-            | Token::Bool(_) | Token::Not | Token::Sharp | Token::LeftBracket
-            | Token::LeftCurl | Token::Nil | Token::Fn(_) => {
-                Ok(self.val_expression()?)
-            }
-            _ => { self.error("Expected Value.".to_string()) }
-        }
+        Ok(self.val_expression()?)
     }
     
     fn array(&mut self) -> Result<EconValue, String> {
@@ -1692,7 +1406,8 @@ impl EconParser {
         
         while !self.check(Token::RightBracket) && !self.at_end() {
             let val = self.array_value()?;
-            result.push(val);
+            let checked_value = self.check_val_with_constraint(val)?;
+            result.push(checked_value);
             if !self.check(Token::RightBracket) {
                 self.consume(Token::Comma, "Expect ','.".to_string())?;  
             }
@@ -1703,45 +1418,13 @@ impl EconParser {
     }
     
     fn key(&mut self) -> Result<(String, EconValue), String> {
-        match self.peek().clone() {
-            Token::Str(s) => {
-                self.eat();
-                self.consume(Token::Colon, "Expected ':' after Key identifier".to_string())?;
-                
-                let result = match self.peek().clone() {
-                    Token::Num(_) | Token::Var(_) | Token::Str(_) | Token::LeftParen 
-                    | Token::Bool(_) | Token::Not | Token::Sharp | Token::LeftBracket
-                    | Token::LeftCurl | Token::Nil | Token::Fn(_) => {
-                        Ok((s.clone(), self.val_expression()?))
-                    }
-                    _ => { self.error("Expected Key: Value pair.".to_string()) }
-                };
-    
-                result
-            }
-            Token::Var(_) => {
-                let v_key = self.primary()?;
-                
-                if let EconValue::Str(s) = v_key {
-                    self.consume(Token::Colon, "Expected ':' after Key identifier".to_string())?;
-                    
-                    let result = match self.peek().clone() {
-                        Token::Num(_) | Token::Var(_) | Token::Str(_) | Token::LeftParen 
-                        | Token::Bool(_) | Token::Not | Token::Sharp | Token::LeftBracket
-                        | Token::LeftCurl | Token::Nil | Token::Fn(_) => {
-                            Ok((s.clone(), self.val_expression()?))
-                        }
-                        _ => { self.error("Expected Key: Value pair.".to_string()) }
-                    };
-        
-                    result
-                } else {
-                    self.error("Expected Key.".to_string())
-                }
-            }
-            _ => {
-                self.error("Expected Key.".to_string())
-            }
+        let v_key = self.val_expression()?;
+            
+        if let EconValue::Str(s) = v_key {
+            self.consume(Token::Colon, "Expected ':' after Key identifier".to_string())?;
+            Ok((s.clone(), self.val_expression()?))
+        } else {
+            self.error(format!("Expected Key got: {}.", v_key))
         }
     }
 
@@ -1859,13 +1542,296 @@ impl EconParser {
         
         Ok(())
     }
+
+    fn check_val_with_constraint(&mut self, input: EconValue) -> Result<EconValue, String> {
+        match input {
+            EconValue::Str(s) => {
+                if !self.in_constraint {
+                    let mut str_to_use : Option<EconValue> = None;
+
+                    for depth in (0..=self.depth).rev() {
+                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("string") {
+                            Some(cv.clone())
+                        } else {
+                            None
+                        };
+        
+                        if let Some(cv) = constr_vec {
+                            self.in_constraint = true;
+                            for cst in cv.iter() {
+                                let return_to = self.current;
+                                self.current = cst.0;
+        
+                                let temp_var = self.create_temp_var()?;
+                                if let EconValue::Str(ref tv) = &temp_var.0 {
+                                    if let Some(ntu) = &str_to_use {
+                                        self.locals[self.depth as usize].insert(tv.clone(), 
+                                            ntu.clone()
+                                        );
+                                    } else {
+                                        self.locals[self.depth as usize].insert(tv.clone(), 
+                                            EconValue::Str(s.to_string())
+                                        );
+                                    }
+                                }
+                                
+                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                                let condition = self.val_expression()?;
+                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                let val = self.val_expression()?;
+
+                                
+                                
+                                match condition {
+                                    EconValue::Bool(true) => {
+                                        if cst.1 {
+                                            match val {
+                                                EconValue::Str(s) => {
+                                                    return self.error(format!("{}", s));
+                                                }
+                                                _ => return self.error(format!("{}", val))
+                                            }
+                                            
+                                        }
+                                        str_to_use = Some(val);
+                                    }
+                                    EconValue::Bool(false) => { }
+                                    _ => {
+                                        return self.error("Constraint condition must be boolean.".to_string());
+                                    }
+                                }
+    
+                                self.restore_temp_var(temp_var);
+                                self.current = return_to;
+                            }
+                            self.in_constraint = false;
+                        }
+                    }
+                    
+                    if let Some(value_to_use) = str_to_use {
+                        Ok(value_to_use)
+                    } else {
+                        Ok(EconValue::Str(s))
+                    }
+                } else {
+                    Ok(EconValue::Str(s))
+                }
+            }
+            EconValue::Bool(b) => {
+                if !self.in_constraint {
+                    let mut bool_to_use : Option<EconValue> = None;
+
+                    for depth in (0..=self.depth).rev() {
+                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("bool") {
+                            Some(cv.clone())
+                        } else {
+                            None
+                        };
+        
+                        if let Some(cv) = constr_vec {
+                            self.in_constraint = true;
+                            for cst in cv.iter() {
+                                let return_to = self.current;
+                                self.current = cst.0;
+        
+                                let temp_var = self.create_temp_var()?;
+                                if let EconValue::Str(ref s) = &temp_var.0 {
+                                    if let Some(ntu) = &bool_to_use {
+                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                            ntu.clone()
+                                        );
+                                    } else {
+                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                            EconValue::Bool(b)
+                                        );
+                                    }
+                                }
+                                
+                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                                let condition = self.val_expression()?;
+                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                let val = self.val_expression()?;
+                                
+                                match condition {
+                                    EconValue::Bool(true) => {
+                                        if cst.1 {
+                                            match val {
+                                                EconValue::Str(s) => {
+                                                    return self.error(format!("{}", s));
+                                                }
+                                                _ => return self.error(format!("{}", val))
+                                            }
+                                            
+                                        }
+                                        bool_to_use = Some(val);
+                                    }
+                                    EconValue::Bool(false) => { }
+                                    _ => {
+                                        return self.error("Constraint condition must be boolean.".to_string());
+                                    }
+                                }
+    
+                                self.restore_temp_var(temp_var);
+                                self.current = return_to;
+                            }
+                            self.in_constraint = false;
+                        }
+                    }
+                    
+                    if let Some(value_to_use) = bool_to_use {
+                        Ok(value_to_use)
+                    } else {
+                        Ok(EconValue::Bool(b))
+                    }
+                } else {
+                    Ok(EconValue::Bool(b))
+                }
+            }
+            EconValue::Num(n) => {
+                if !self.in_constraint {
+                    let mut num_to_use : Option<EconValue> = None;
+
+                    for depth in (0..=self.depth).rev() {
+                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("number") {
+                            Some(cv.clone())
+                        } else {
+                            None
+                        };
+        
+                        if let Some(cv) = constr_vec {
+                            self.in_constraint = true;
+                            for cst in cv.iter() {
+                                let return_to = self.current;
+                                self.current = cst.0;
+        
+                                let temp_var = self.create_temp_var()?;
+                                if let EconValue::Str(ref s) = &temp_var.0 {
+                                    if let Some(ntu) = &num_to_use {
+                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                            ntu.clone()
+                                        );
+                                    } else {
+                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                            EconValue::Num(n)
+                                        );
+                                    }
+                                }
+                                
+                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                                let condition = self.val_expression()?;
+                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                let val = self.val_expression()?;
+                                
+                                match condition {
+                                    EconValue::Bool(true) => {
+                                        if cst.1 {
+                                            match val {
+                                                EconValue::Str(s) => {
+                                                    return self.error(format!("{}", s));
+                                                }
+                                                _ => return self.error(format!("{}", val))
+                                            }
+                                            
+                                        }
+                                        num_to_use = Some(val);
+                                    }
+                                    EconValue::Bool(false) => { }
+                                    _ => {
+                                        return self.error("Constraint condition must be boolean.".to_string());
+                                    }
+                                }
+    
+                                self.restore_temp_var(temp_var);
+                                self.current = return_to;
+                            }
+                            self.in_constraint = false;
+                        }
+                    }
+                    
+                    if let Some(value_to_use) = num_to_use {
+                        Ok(value_to_use)
+                    } else {
+                        Ok(EconValue::Num(n))
+                    }
+                } else {
+                    Ok(EconValue::Num(n))
+                }
+            }
+            EconValue::Nil => {
+                if !self.in_constraint {
+                    let mut nil_to_use : Option<EconValue> = None;
+
+                    for depth in (0..=self.depth).rev() {
+                        let constr_vec = if let Some(cv) = self.constraints[depth as usize].get("nil") {
+                            Some(cv.clone())
+                        } else {
+                            None
+                        };
+        
+                        if let Some(cv) = constr_vec {
+                            self.in_constraint = true;
+                            for cst in cv.iter() {
+                                let return_to = self.current;
+                                self.current = cst.0;
+        
+                                let temp_var = self.create_temp_var()?;
+                                if let EconValue::Str(ref s) = &temp_var.0 {
+                                    if let Some(ntu) = &nil_to_use {
+                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                            ntu.clone()
+                                        );
+                                    } else {
+                                        self.locals[self.depth as usize].insert(s.clone(), 
+                                            EconValue::Nil
+                                        );
+                                    }
+                                }
+                                
+                                self.consume(Token::Arrow, "Expect '=>' after reference.".to_string())?;
+                                let condition = self.val_expression()?;
+                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                let val = self.val_expression()?;
+                                
+                                match condition {
+                                    EconValue::Nil => {
+                                        if cst.1 {
+                                            match val {
+                                                EconValue::Str(s) => {
+                                                    return self.error(format!("{}", s));
+                                                }
+                                                _ => return self.error(format!("{}", val))
+                                            }
+                                            
+                                        }
+                                        nil_to_use = Some(val);
+                                    }
+                                    _ => {
+                                        return self.error("Constraint condition must be boolean.".to_string());
+                                    }
+                                }
+    
+                                self.restore_temp_var(temp_var);
+                                self.current = return_to;
+                            }
+                            self.in_constraint = false;
+                        }
+                    }
+                    
+                    if let Some(value_to_use) = nil_to_use {
+                        Ok(value_to_use)
+                    } else {
+                        Ok(EconValue::Nil)
+                    }
+                } else {
+                    Ok(EconValue::Nil)
+                }
+            }
+            _ => { Ok(input) }
+        }
+    }
     
     fn expression(&mut self) -> Result<(String, EconValue), String> {
-        if let Token::Str(_) | Token::Var(_) = self.peek() {
-            self.key()
-        } else {
-            self.error("Expression Error.".to_string())
-        }
+        self.key()
     }
     
     fn object(&mut self) -> Result<EconValue, String> {
@@ -1889,8 +1855,9 @@ impl EconParser {
             if let Some(_) = result.data.get(&key_val.0) {
                 return self.error("Duplicate Key.".to_string());
             } else {
-                result.data.insert(key_val.0.clone(), key_val.1.clone());
-                self.locals[self.depth as usize].insert(key_val.0, key_val.1);
+                let checked_value = self.check_val_with_constraint(key_val.1)?;
+                result.data.insert(key_val.0.clone(), checked_value.clone());
+                self.locals[self.depth as usize].insert(key_val.0, checked_value);
             }
             if !self.check(Token::RightCurl) {
                 self.consume(Token::Comma, "Expect ','.".to_string())?;  
@@ -1900,7 +1867,7 @@ impl EconParser {
         Ok(EconValue::Obj(result))
     }
 
-    pub fn parse(&mut self, lexer: &mut EconLexer, debug: bool) -> Result<EconObj, String> {
+    pub fn parse(&mut self, lexer: &mut EconLexer, debug: bool) -> Result<EconValue, String> {
         if debug {  
             println!("----Src----"); 
             println!("{}", lexer.source);
@@ -1954,7 +1921,7 @@ impl EconParser {
                             println!("{}", &v);
                         }
                         
-                        Ok(v)
+                        Ok(EconValue::Obj(v))
                     }
                     _ => {
                         self.error(String::from("Object not found."))

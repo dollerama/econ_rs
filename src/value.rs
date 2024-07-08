@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, ops::{Index, IndexMut}};
 
 use crate::object::{Access, EconObj};
 
@@ -278,6 +278,38 @@ impl Access<usize> for EconValue {
                 o.get_mut(i)
             }
             _ => { None }
+        }
+    }
+}
+
+impl Index<&str> for EconValue {
+    type Output = EconValue;
+    fn index<'a>(&'a self, i: &str) -> &'a EconValue {
+        &self.get(i)
+    }
+}
+
+impl Index<usize> for EconValue {
+    type Output = EconValue;
+    fn index<'a>(&'a self, i: usize) -> &'a EconValue {
+        &self.get(i)
+    }
+}
+
+impl IndexMut<&str> for EconValue {
+    fn index_mut<'a>(&'a mut self, i: &str) -> &'a mut EconValue {
+        match self.get_mut(i) {
+            Some(v) => v,
+            None => panic!("Cannot index mut None"),
+        }
+    }
+}
+
+impl IndexMut<usize> for EconValue {
+    fn index_mut<'a>(&'a mut self, i: usize) -> &'a mut EconValue {
+        match self.get_mut(i) {
+            Some(v) => v,
+            None => panic!("Cannot index mut None"),
         }
     }
 }

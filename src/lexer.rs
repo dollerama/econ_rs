@@ -267,6 +267,8 @@ impl EconLexer {
             self.make_token(Token::Or)
         } else if &self.source[self.start..self.current] == "and" {
             self.make_token(Token::And)
+        } else if &self.source[self.start..self.current] == "inf" {
+            self.make_token(Token::Num(f64::INFINITY))
         } else if &self.source[self.start..self.current] == "filter" {
             self.make_token(Token::Fn(Function::Filter))
         } else if &self.source[self.start..self.current] == "map" {
@@ -351,6 +353,9 @@ impl EconLexer {
                                         break;
                                     }
                                 }
+                                TokenData{ token: Token::EOF, .. } => {
+                                    return self.error(format!("Unterminated Macro {}", s))
+                                }
                                 _ => { }
                             }
                             
@@ -387,7 +392,7 @@ impl EconLexer {
                         self.make_token(Token::Macro(new_stream))
                     }
                 } else {
-                    self.error("Expect '(' token after Macro identifier.".to_string())
+                    self.error(format!("Expect '(' after Macro {}.", s))
                 }
             } else {
                 if let Some('(') = self.peek() {
@@ -405,6 +410,9 @@ impl EconLexer {
                                 }
                                 TokenData{ token: Token::RightParen, .. } => {
                                     break;
+                                }
+                                TokenData{ token: Token::EOF, .. } => {
+                                    return self.error(format!("Unterminated Macro {}", s))
                                 }
                                 t => { params.push(t); }
                             }
@@ -432,9 +440,11 @@ impl EconLexer {
                     }
                     
                     self.macros.insert(s.clone(), (params, stream));
-                    Err("Macro".to_string())
+
+                    //a somewhat hacky way of telling the lexer to process the macro
+                    Err("Macro".to_string()) 
                 } else {
-                    self.error("Expect '(' token after Macro identifier.".to_string())
+                    self.error(format!("Expect '(' after Macro {}.", s))
                 }
             }
         } else {
