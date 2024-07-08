@@ -8,6 +8,8 @@ impl Econ {
     /// create an EconValue
     /// # Example
     /// ```rust
+    /// use econ_rs::econ::Econ;
+    ///
     /// let obj = Econ::create(
     /// r#"
     /// {
@@ -15,7 +17,7 @@ impl Econ {
     ///     b: 2,
     ///     c: 3
     /// }
-    /// "#, true)
+    /// "#, true);
     /// ```
     pub fn create(src: &str, debug: bool) -> Result<EconValue, String> {
         match PathBuf::from_str(src) {
