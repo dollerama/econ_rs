@@ -131,7 +131,7 @@ impl EconParser {
                         (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) => {
                             EconValue::Bool(n1==n2)
                         }
-                        _ => return self.error(format!("Invalid '==' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '==' of types: {} and {}", left, right))
                     };
                 }
                 Token::NotEqual => {
@@ -148,7 +148,7 @@ impl EconParser {
                         (&EconValue::Str(ref n1), &EconValue::Str(ref n2)) => {
                             EconValue::Bool(n1!=n2)
                         }
-                        _ => return self.error(format!("Invalid '~=' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '~=' of types: {} and {}", left, right))
                     };
                 }
                 Token::Question => {
@@ -200,7 +200,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error(format!("Invalid '<' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '<' of types: {} and {}", left, right))
                     };
                 }
                 Token::Greater => {
@@ -223,7 +223,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error(format!("Invalid '>' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '>' of types: {} and {}", left, right))
                     };
                 }
                 Token::GreaterEqual => {
@@ -246,7 +246,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error(format!("Invalid '>=' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '>=' of types: {} and {}", left, right))
                     };
                 }
                 Token::LessEqual => {
@@ -269,7 +269,7 @@ impl EconParser {
                         
                             EconValue::Bool(res)
                         }
-                        _ => return self.error(format!("Invalid '<=' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '<=' of types: {} and {}", left, right))
                     };
                 }
                 Token::And => {
@@ -393,7 +393,7 @@ impl EconParser {
                             
                             EconValue::Obj(new_obj)
                         }
-                        _ => return self.error(format!("Invalid addition of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid addition of types: {} and {}", left, right))
                     };
                 }
                 Token::BackSlash => {
@@ -422,7 +422,7 @@ impl EconParser {
                         (&EconValue::Bool(ref n1), &EconValue::Str(ref n2)) =>  {
                             EconValue::Str(format!("{}\n{}", n1, n2))
                         }
-                        _ => return self.error(format!("Invalid concatenation of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid concatenation of types: {} and {}", left, right))
                     };
                 }
                 Token::Minus => {
@@ -433,7 +433,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1-n2)
                         }
-                        _ => return self.error(format!("Invalid subtraction of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid subtraction of types: {} and {}", left, right))
                     };
                 }
                 _ => {
@@ -458,7 +458,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1*n2)
                         }
-                        _ => return self.error(format!("Invalid '*' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '*' of types: {} and {}", left, right))
                     };
                 }
                 Token::Div => {
@@ -469,7 +469,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1/n2)
                         }
-                        _ => return self.error(format!("Invalid '/' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '/' of types: {} and {}", left, right))
                     };
                 }
                 Token::Percent => {
@@ -480,7 +480,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1.rem_euclid(*n2))
                         }
-                        _ => return self.error(format!("Invalid '%' of types: {}+{}", left, right))
+                        _ => return self.error(format!("Invalid '%' of types: {} and {}", left, right))
                     };
                 }
                 _ => {
@@ -537,18 +537,42 @@ impl EconParser {
         }
     }
     
-    fn filter_impl(&mut self) -> Result<EconValue, String> {
+    fn create_temp_var(&mut self, fn_name: &str) -> Result<(EconValue, Option<EconValue>), String> {
+        let i_name = self.val_expression()?;
+        let cached_val;
+                
+        if let EconValue::Str(ref s) = &i_name {
+            cached_val = if let Some(v) = self.locals[self.depth as usize].get(s) {
+                Some(v.clone())
+            } else {
+                None
+            };
+            self.locals[self.depth as usize].insert(s.clone(), EconValue::Nil);
+        } else {
+            return self.error(format!("{}: Invalid reference got {}.", fn_name, i_name))
+        }
+        
+        Ok((i_name.clone(), cached_val.clone()))
+    }
+    
+    fn restore_temp_var(&mut self, var: (EconValue, Option<EconValue>)) {
+        if let (EconValue::Str(ref s), Some(cache)) = (&var.0, var.1) {
+            self.locals[self.depth as usize].insert(s.clone(), cache.clone());
+        }
+    }
+    
+    fn filter_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
         
-        match right {
+        match &right {
             EconValue::Arr(a) => {
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
+                self.consume(Token::Comma, format!("{}: Expect ',' after arg 1.", name))?;
                 
-                let temp_1 = self.create_temp_var()?;
+                let temp_1 = self.create_temp_var(name)?;
                 
-                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                self.consume(Token::Arrow, format!("{}: Expect '=>' after reference {}.", name, temp_1.0))?;
                 let mut new_vec = vec!();
                 for (j, aa) in a.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
@@ -563,7 +587,7 @@ impl EconParser {
                         }
                         EconValue::Bool(false) => { }
                         _ => {
-                            return self.error("Filter condition must be boolean.".to_string());
+                            return self.error(format!("{}: condition must be boolean got {}.", name, condition));
                         }
                     }
                     if j < a.len()-1 {
@@ -573,23 +597,23 @@ impl EconParser {
     
                 self.restore_temp_var(temp_1);
                 
-                self.consume(Token::RightParen, "Expect ')' after Function.".to_string())?; 
+                self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
                 Ok(EconValue::Arr(new_vec))
             }
             EconValue::Obj(a) => {
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
+                self.consume(Token::Comma, format!("{}: Expect ',' after arg 1.", name))?;
                 
-                let temp_1 = self.create_temp_var()?;
+                let temp_1 = self.create_temp_var(name)?;
                 
-                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                self.consume(Token::Arrow, format!("{}: Expect '=>' after reference {}.", name, temp_1.0))?;
                 let mut new_obj = EconObj::new();
                 for (j, aa) in a.data.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
-                        let mut key_val = EconObj::new();
-                        key_val.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
-                        key_val.data.insert("val".to_string(), aa.1.clone());
+                        let mut keyVal = EconObj::new();
+                        keyVal.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
+                        keyVal.data.insert("val".to_string(), aa.1.clone());
                         self.locals[self.depth as usize].insert(s.clone(), 
-                            EconValue::Obj(key_val)
+                            EconValue::Obj(keyVal)
                         );
                     } 
                     let goto_point = self.current;
@@ -601,7 +625,7 @@ impl EconParser {
                         }
                         EconValue::Bool(false) => { }
                         _ => {
-                            return self.error("Filter condition must be boolean.".to_string());
+                            return self.error(format!("{}: condition must be boolean got {}.", name, condition));
                         }
                     }
                     if j < a.data.keys().len()-1 {
@@ -611,97 +635,158 @@ impl EconParser {
                 
                 self.restore_temp_var(temp_1);
                 
-                self.consume(Token::RightParen, "Expect ')' after Map Function.".to_string())?; 
+                self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
                 Ok(EconValue::Obj(new_obj))
             }
             _ => {
-                return self.error("Invalid literal/variable in function arguments.".to_string());
+                self.error(format!("{}: Invalid argument expected Object/Array got {}.", name, right))
             }
         }
     }
     
-    fn keys_impl(&mut self) -> Result<EconValue, String> {
+    fn keys_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Keys Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
         
-        if let EconValue::Obj(s) = right {
-            self.consume(Token::RightParen, "Expect ')' after Keys Function.".to_string())?; 
+        if let EconValue::Obj(s) = &right {
+            self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
             let mut new_vec = vec!();
             for i in s.data.keys() {
                 new_vec.push(EconValue::Str(i.to_string()));
             }
             Ok(EconValue::Arr(new_vec))
         } else {
-            return self.error("Invalid literal/variable in Keys Function arguments.".to_string());
+            return self.error(format!("{}: Invalid argument expected Object got {}.", name, right));
         }
     }
     
-    fn values_impl(&mut self) -> Result<EconValue, String> {
+    fn values_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Keys Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
         
-        if let EconValue::Obj(s) = right {
-            self.consume(Token::RightParen, "Expect ')' after Keys Function.".to_string())?; 
+        if let EconValue::Obj(s) = &right {
+            self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
             let mut new_vec = vec!();
             for i in s.data.values() {
                 new_vec.push(i.clone());
             }
             Ok(EconValue::Arr(new_vec))
         } else {
-            return self.error("Invalid literal/variable in Keys Function arguments.".to_string());
+            return self.error(format!("{}: Invalid argument expected Object got {}.", name, right));
         }
     }
     
-    fn chars_impl(&mut self) -> Result<EconValue, String> {
+    fn chars_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Chars Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
         
-        if let EconValue::Str(s) = right {
-            self.consume(Token::RightParen, "Expect ')' after Chars Function.".to_string())?; 
+        if let EconValue::Str(s) = &right {
+            self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
             let mut new_vec = vec!();
             for i in s.chars() {
                 new_vec.push(EconValue::Str(i.to_string()));
             }
             Ok(EconValue::Arr(new_vec))
         } else {
-            return self.error("Invalid literal/variable in Chars Function arguments.".to_string());
+            return self.error(format!("{}: Invalid argument expected String got {}.", name, right));
         }
     }
     
-    fn string_impl(&mut self) -> Result<EconValue, String> {
+    fn string_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after String Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
-
-        if let &EconValue::Arr(ref a) = &right {
-            self.consume(Token::RightParen, "Expect ')' after String Function.".to_string())?; 
-            let mut new_str = String::from("");
-            for i in a {
-                if let EconValue::Str(s) = i {
-                    new_str.push_str(s);
+        
+        fn dig(current: &EconValue) -> String {
+            match current {
+                &EconValue::Arr(ref a)  => {
+                    let mut new_str = String::from("");
+                    for i in a {
+                        match i {
+                            EconValue::Bool(b) => {
+                                if *b {
+                                    new_str.push_str("true");
+                                } else {
+                                    new_str.push_str("false");
+                                }
+                            }
+                            EconValue::Num(n) => {
+                                new_str.push_str(format!("{}", n).as_str());
+                            }
+                            EconValue::Str(s) => {
+                                new_str.push_str(s);
+                            }
+                            EconValue::Nil => {
+                                new_str.push_str("nil");
+                            }
+                            _ => { new_str.push_str(dig(i).as_str()); }
+                        }
+                    }
+                    new_str
+                }
+                &EconValue::Obj(ref a)  => {
+                    let mut new_str = String::from("");
+                    for i in a.data.values() {
+                        match i {
+                            EconValue::Bool(b) => {
+                                if *b {
+                                    new_str.push_str("true");
+                                } else {
+                                    new_str.push_str("false");
+                                }
+                            }
+                            EconValue::Num(n) => {
+                                new_str.push_str(format!("{}", n).as_str());
+                            }
+                            EconValue::Str(s) => {
+                                new_str.push_str(s);
+                            }
+                            EconValue::Nil => {
+                                new_str.push_str("nil");
+                            }
+                            _ => { new_str.push_str(dig(i).as_str()); }
+                        }
+                    }
+                    new_str
+                }
+                EconValue::Bool(b) => {
+                    if *b {
+                        String::from("true")
+                    } else {
+                        String::from("false")
+                    }
+                }
+                EconValue::Num(n) => {
+                    format!("{}", n)
+                }
+                EconValue::Str(s) => {
+                    s.to_string()
+                }
+                EconValue::Nil => {
+                    String::from("nil")
                 }
             }
-            Ok(EconValue::Str(new_str))
-        } else {
-            return self.error("Invalid literal/variable in String Function arguments.".to_string());
         }
+
+        self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
+        Ok(EconValue::Str(dig(&right)))
     }
     
-    fn map_impl(&mut self) -> Result<EconValue, String> {
+    fn map_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Map Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
         
         match right {
             EconValue::Arr(a) => {
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
+                self.consume(Token::Comma, format!("{}: Expect ',' after arg 1.", name))?;
                 
-                let temp_1 = self.create_temp_var()?;
+                let temp_1 = self.create_temp_var(name)?;
                 
-                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                self.consume(Token::Arrow, format!("{}: Expect '=>' after reference {}.", name, temp_1.0))?;
                 let mut new_vec = vec!();
                 for (j, aa) in a.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
@@ -719,23 +804,23 @@ impl EconParser {
                 
                 self.restore_temp_var(temp_1);
                 
-                self.consume(Token::RightParen, "Expect ')' after Map Function.".to_string())?; 
+                self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
                 Ok(EconValue::Arr(new_vec))
             }
             EconValue::Obj(a) => {
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
+                self.consume(Token::Comma, format!("{}: Expect ',' after arg 1.", name))?;
                 
-                let temp_1 = self.create_temp_var()?;
+                let temp_1 = self.create_temp_var(name)?;
                 
-                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                self.consume(Token::Arrow, format!("{}: Expect '=>' after iterator {}.", name, temp_1.0))?;
                 let mut new_obj = EconObj::new();
                 for (j, aa) in a.data.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
-                        let mut key_val = EconObj::new();
-                        key_val.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
-                        key_val.data.insert("val".to_string(), aa.1.clone());
+                        let mut keyVal = EconObj::new();
+                        keyVal.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
+                        keyVal.data.insert("val".to_string(), aa.1.clone());
                         self.locals[self.depth as usize].insert(s.clone(), 
-                            EconValue::Obj(key_val)
+                            EconValue::Obj(keyVal)
                         );
                     } 
                     let goto_point = self.current;
@@ -750,55 +835,74 @@ impl EconParser {
                 
                 self.restore_temp_var(temp_1);
                 
-                self.consume(Token::RightParen, "Expect ')' after Map Function.".to_string())?; 
+                self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
                 Ok(EconValue::Obj(new_obj))
             }
             _ => {
-                self.error("Invalid literal/variable in Map Function arguments.".to_string())
+                self.error(format!("{}: Invalid argument expected Object/Array got {}.", name, right))
             }
         }
     }
     
-    fn create_temp_var(&mut self) -> Result<(EconValue, Option<EconValue>), String> {
-        let i_name = self.val_expression()?;
-        let cached_val;
-                
-        if let EconValue::Str(ref s) = &i_name {
-            cached_val = if let Some(v) = self.locals[self.depth as usize].get(s) {
-                Some(v.clone())
-            } else {
-                None
-            };
-            self.locals[self.depth as usize].insert(s.clone(), EconValue::Nil);
-        } else {
-            return self.error("Invalid iterator identifier.".to_string())
-        }
-        
-        Ok((i_name.clone(), cached_val.clone()))
-    }
-    
-    fn restore_temp_var(&mut self, var: (EconValue, Option<EconValue>)) {
-        if let (EconValue::Str(ref s), Some(cache)) = (&var.0, var.1) {
-            self.locals[self.depth as usize].insert(s.clone(), cache.clone());
-        }
-    }
-    
-    fn fold_impl(&mut self) -> Result<EconValue, String> {
+    fn zip_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Fold Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
+        let a = self.val_expression()?;
+        self.consume(Token::Comma, format!("{}: Expect ',' after arg 1.", name))?;
+        let b = self.val_expression()?;
+        
+        let res = match (a, b) {
+            (EconValue::Arr(aa), EconValue::Arr(bb)) => {
+                let mut i = 0;
+                let mut ret = vec!();
+                loop {
+                    match (aa.get(i), bb.get(i)) {
+                        (Some(av), Some(bv)) => {
+                            ret.push(EconValue::Arr(vec![av.clone(), bv.clone()]))
+                        }
+                        (Some(av), None) => {
+                            ret.push(EconValue::Arr(vec![av.clone(), EconValue::Nil]))
+                        }
+                        (None, Some(bv)) => {
+                            ret.push(EconValue::Arr(vec![EconValue::Nil, bv.clone()]))
+                        }
+                        (None, None) => { break; }
+                    }
+                    i += 1;
+                }
+                
+                ret
+            }
+            (EconValue::Arr(aa), bb) => {
+                return self.error(format!("{}: Invalid argument 2 expected an Array got {}.", name, bb));
+            }
+            (aa, EconValue::Arr(bb)) => {
+                return self.error(format!("{}: Invalid argument 1 expected an Array got {}.", name, aa));
+            }
+            (aa, bb) => {
+                return self.error(format!("{}: Invalid arguments expected Arrays got {} and {}.", name, aa, bb));
+            }
+        };
+        
+        self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
+        Ok(EconValue::Arr(res))
+    }
+    
+    fn fold_impl(&mut self, name: &str) -> Result<EconValue, String> {
+        self.eat();
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
+        self.consume(Token::Comma, format!("{}: Expect ',' after arg 1.", name))?;
         
         match right {
             EconValue::Arr(a) => {
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
+                self.consume(Token::Pipe, format!("{}: Expect '|' before references.", name))?;
+                let temp_1 = self.create_temp_var(name)?;
+                self.consume(Token::Comma, format!("{}: Expect ',' after reference 1.", name))?;
+                let temp_2 = self.create_temp_var(name)?;
+                self.consume(Token::Pipe, format!("{}: Expect '|' after references.", name))?;
                 
-                self.consume(Token::Pipe, "Expect '|' before args.".to_string())?;
-                let temp_1 = self.create_temp_var()?;
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
-                let temp_2 = self.create_temp_var()?;
-                self.consume(Token::Pipe, "Expect '|' after args.".to_string())?;
-                
-                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                self.consume(Token::Arrow, format!("{}: Expect '=>' after '|'.", name))?;
 
                 for (j, aa) in a.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
@@ -838,19 +942,17 @@ impl EconParser {
                 self.restore_temp_var(temp_1);
                 self.restore_temp_var(temp_2);
                 
-                self.consume(Token::RightParen, "Expect ')' after Fold Function.".to_string())?; 
+                self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
                 Ok(ret_val)
             }
             EconValue::Obj(a) => {
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
+                self.consume(Token::Pipe, format!("{}: Expect '|' before references.", name))?;
+                let temp_1 = self.create_temp_var(name)?;
+                self.consume(Token::Comma, format!("{}: Expect ',' after reference 1.", name))?;
+                let temp_2 = self.create_temp_var(name)?;
+                self.consume(Token::Pipe, format!("{}: Expect '|' after references.", name))?;
                 
-                self.consume(Token::Pipe, "Expect '|' before args.".to_string())?;
-                let temp_1 = self.create_temp_var()?;
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
-                let temp_2 = self.create_temp_var()?;
-                self.consume(Token::Pipe, "Expect '|' after args.".to_string())?;
-                
-                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                self.consume(Token::Arrow, format!("{}: Expect '=>' after '|'.", name))?;
 
                 for (j, aa) in a.data.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
@@ -894,54 +996,16 @@ impl EconParser {
                 self.restore_temp_var(temp_1);
                 self.restore_temp_var(temp_2);
                 
-                self.consume(Token::RightParen, "Expect ')' after Fold Function.".to_string())?; 
+                self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
                 Ok(ret_val)
             }
-            _ => {
-                self.error("Invalid literal/variable in Fold Function arguments.".to_string())
+            v => {
+                self.error(format!("{}: Invalid argument 1 expected an Array/Object got {}.", name, v))
             }
         }
     }
-
-    fn zip_impl(&mut self) -> Result<EconValue, String> {
-        self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Zip Function.".to_string())?;
-        let a = self.val_expression()?;
-        self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
-        let b = self.val_expression()?;
-        
-        let res = match (a, b) {
-            (EconValue::Arr(aa), EconValue::Arr(bb)) => {
-                let mut i = 0;
-                let mut ret = vec!();
-                loop {
-                    match (aa.get(i), bb.get(i)) {
-                        (Some(av), Some(bv)) => {
-                            ret.push(EconValue::Arr(vec![av.clone(), bv.clone()]))
-                        }
-                        (Some(av), None) => {
-                            ret.push(EconValue::Arr(vec![av.clone(), EconValue::Nil]))
-                        }
-                        (None, Some(bv)) => {
-                            ret.push(EconValue::Arr(vec![EconValue::Nil, bv.clone()]))
-                        }
-                        (None, None) => { break; }
-                    }
-                    i += 1;
-                }
-                
-                ret
-            }
-            _ => {
-                return self.error("Invalid literals/variables in Zip Function arguments.".to_string())
-            }
-        };
-        
-        self.consume(Token::RightParen, "Expect ')' after Zip Function.".to_string())?; 
-        Ok(EconValue::Arr(res))
-    }
-
-    fn partition(&mut self, a: &mut [EconValue], temp_1: &(EconValue, Option<EconValue>), temp_2: &(EconValue, Option<EconValue>)) -> Result<usize, String> {
+    
+    fn partition(&mut self, name: &str, a: &mut [EconValue], temp_1: &(EconValue, Option<EconValue>), temp_2: &(EconValue, Option<EconValue>)) -> Result<usize, String> {
         let mut i = 0;
         let right = a.len() - 1;
      
@@ -969,7 +1033,7 @@ impl EconParser {
                     }
                 }
                 v => {
-                    return self.error(format!("Sort condition must be boolean got {:?}.", v));
+                    return self.error(format!("{}: condition must be boolean got {:?}.", name, v));
                 }
             }
             
@@ -980,46 +1044,47 @@ impl EconParser {
         Ok(i)
     }
      
-    fn quicksort(&mut self, a: &mut [EconValue], temp_1: &(EconValue, Option<EconValue>), temp_2: &(EconValue, Option<EconValue>)) -> Result<(), String> {
+    fn quicksort(&mut self, name: &str, a: &mut [EconValue], temp_1: &(EconValue, Option<EconValue>), temp_2: &(EconValue, Option<EconValue>)) -> Result<(), String> {
         if a.len() > 1 {
-            let q = self.partition(a, temp_1, temp_2)?;
-            self.quicksort(&mut a[..q], temp_1, temp_2)?;
-            self.quicksort(&mut a[q+1..], temp_1, temp_2)?;
+            let q = self.partition(name, a, temp_1, temp_2)?;
+            self.quicksort(name, &mut a[..q], temp_1, temp_2)?;
+            self.quicksort(name, &mut a[q+1..], temp_1, temp_2)?;
         }
 
         Ok(())
     }
     
-    fn sort_impl(&mut self) -> Result<EconValue, String> {
+    fn sort_impl(&mut self, name: &str) -> Result<EconValue, String> {
         self.eat();
-        self.consume(Token::LeftParen, "Expect '(' after Sort Function.".to_string())?;
+        self.consume(Token::LeftParen, format!("Expect '(' after {}.", name))?;
         let right = self.val_expression()?;
+        self.consume(Token::Comma, format!("{}: Expect ',' after arg 1.", name))?;
         
         match right {
             EconValue::Arr(a) => {
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
                 
-                self.consume(Token::Pipe, "Expect '|' before args.".to_string())?;
-                let temp_1 = self.create_temp_var()?;
-                self.consume(Token::Comma, "Expect ',' after arg.".to_string())?;
-                let temp_2 = self.create_temp_var()?;
-                self.consume(Token::Pipe, "Expect '|' after args.".to_string())?;
                 
-                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                self.consume(Token::Pipe, format!("{}: Expect '|' before references.", name))?;
+                let temp_1 = self.create_temp_var(name)?;
+                self.consume(Token::Comma, format!("{}: Expect ',' after reference 1.", name))?;
+                let temp_2 = self.create_temp_var(name)?;
+                self.consume(Token::Pipe, format!("{}: Expect '|' after references.", name))?;
+                
+                self.consume(Token::Arrow, format!("{}: Expect '=>' after '|'.", name))?;
 
                 let mut new_vec = a.clone();
 
-                self.quicksort(&mut new_vec[..], &temp_1, &temp_2)?;
+                self.quicksort(name, &mut new_vec[..], &temp_1, &temp_2)?;
                 self.val_expression()?;
                 
                 self.restore_temp_var(temp_1);
                 self.restore_temp_var(temp_2);
                 
-                self.consume(Token::RightParen, "Expect ')' after Sort Function.".to_string())?; 
+                self.consume(Token::RightParen, format!("Expect ')' after {} args.", name))?; 
                 Ok(EconValue::Arr(new_vec))
             }
-            _ => {
-                self.error("Invalid literal/variable in Sort Function arguments.".to_string())
+            v => {
+                self.error(format!("{}: Invalid argument 1 expected an Array/Object got {}.", name, v))
             }
         }
     }
@@ -1029,31 +1094,31 @@ impl EconParser {
             Token::Fn(func) => {
                 match func {
                     Function::Filter => {
-                        self.filter_impl()
+                        self.filter_impl("filter")
                     }
                     Function::Map => {
-                        self.map_impl()
+                        self.map_impl("map")
                     }
                     Function::Chars => {
-                        self.chars_impl()
+                        self.chars_impl("chars")
                     }
                     Function::ToString => {
-                        self.string_impl()
+                        self.string_impl("to_string")
                     }
                     Function::Keys => {
-                        self.keys_impl()
+                        self.keys_impl("keys")
                     }
                     Function::Values => {
-                        self.values_impl()
+                        self.values_impl("values")
                     }
                     Function::Fold => {
-                        self.fold_impl()
+                        self.fold_impl("fold")
                     }
                     Function::Zip => {
-                        self.zip_impl()
+                        self.zip_impl("zip")
                     }
                     Function::Sort => {
-                        self.sort_impl()
+                        self.sort_impl("sort")
                     }
                 }
             }
@@ -1428,122 +1493,7 @@ impl EconParser {
         }
     }
 
-    fn constraint_pre_process(&mut self) -> Result<(), String> {
-        loop {
-            match self.peek().clone() {
-                Token::ConstraintMacro => {
-                    self.eat();
-                    self.consume(Token::LeftCurl, "Expected '{' after '@'.".to_string())?;
-
-                    match self.peek().clone() {
-                        Token::Str(s) => {
-                            self.eat();
-                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
-                            let start_of = self.current;
-                            
-                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
-                                v.push((start_of, false));
-                            } else {
-                                self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, false)));
-                            }
-                            
-                            loop {
-                                if self.match_single(Token::RightCurl) {
-                                    break;
-                                }
-                                self.eat();
-                            }
-
-                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                                continue;    
-                            }
-                        }
-                        Token::Nil => {
-                            self.eat();
-                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
-                            let start_of = self.current;
-                            
-                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut("nil") {
-                                v.push((start_of, false));
-                            } else {
-                                self.constraints[self.depth as usize].insert("nil".to_string(), vec!((start_of, false)));
-                            }
-                            
-                            loop {
-                                if self.match_single(Token::RightCurl) {
-                                    break;
-                                }
-                                self.eat();
-                            }
-
-                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                                continue;    
-                            }
-                        }
-                        _ => { return self.error("Constraint Macro preprocessor Error.".to_string()); }
-                    }
-                }
-                Token::ErrorMacro => {
-                    self.eat();
-                    self.consume(Token::LeftCurl, "Expected '{' after '@!'.".to_string())?;
-
-                    match self.peek().clone() {
-                        Token::Str(s) => {
-                            self.eat();                        
-                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
-                            let start_of = self.current;
-                            
-                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
-                                v.push((start_of, true));
-                            } else {
-                                self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, true)));
-                            }
-                            
-                            loop {
-                                if self.match_single(Token::RightCurl) {
-                                    break;
-                                }
-                                self.eat();
-                            }
-
-                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                                continue;    
-                            }
-                        }
-                        Token::Nil => {
-                            self.eat();                        
-                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
-                            let start_of = self.current;
-                            
-                            if let Some(mut v) = self.constraints[self.depth as usize].get_mut("nil") {
-                                v.push((start_of, true));
-                            } else {
-                                self.constraints[self.depth as usize].insert("nil".to_string(), vec!((start_of, true)));
-                            }
-                            
-                            loop {
-                                if self.match_single(Token::RightCurl) {
-                                    break;
-                                }
-                                self.eat();
-                            }
-
-                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                                continue;    
-                            }
-                        }
-                        _ => { return self.error("Error Macro preprocessor Error.".to_string());  }
-                    }
-                   
-                }
-                _ => { break; }
-            }
-        }
-        
-        Ok(())
-    }
-
-    fn check_val_with_constraint(&mut self, input: EconValue) -> Result<EconValue, String> {
+    fn check_val_with_constraint(&mut self, input: EconValue) -> Result<EconValue, String>{
         match input {
             EconValue::Str(s) => {
                 if !self.in_constraint {
@@ -1559,10 +1509,16 @@ impl EconParser {
                         if let Some(cv) = constr_vec {
                             self.in_constraint = true;
                             for cst in cv.iter() {
+                                let name = if cst.1 {
+                                    "string error"
+                                } else {
+                                    "string constraint"
+                                };
+                                    
                                 let return_to = self.current;
                                 self.current = cst.0;
         
-                                let temp_var = self.create_temp_var()?;
+                                let temp_var = self.create_temp_var(name)?;
                                 if let EconValue::Str(ref tv) = &temp_var.0 {
                                     if let Some(ntu) = &str_to_use {
                                         self.locals[self.depth as usize].insert(tv.clone(), 
@@ -1575,12 +1531,10 @@ impl EconParser {
                                     }
                                 }
                                 
-                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                                self.consume(Token::Arrow, format!("{}: Expect '=>' after reference.", name))?;
                                 let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                self.consume(Token::Comma, format!("{}: Expect ',' after condition.", name))?;
                                 let val = self.val_expression()?;
-
-                                
                                 
                                 match condition {
                                     EconValue::Bool(true) => {
@@ -1591,13 +1545,12 @@ impl EconParser {
                                                 }
                                                 _ => return self.error(format!("{}", val))
                                             }
-                                            
                                         }
                                         str_to_use = Some(val);
                                     }
                                     EconValue::Bool(false) => { }
                                     _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
+                                        return self.error(format!("{}: condition must be boolean.", name));
                                     }
                                 }
     
@@ -1631,10 +1584,15 @@ impl EconParser {
                         if let Some(cv) = constr_vec {
                             self.in_constraint = true;
                             for cst in cv.iter() {
+                                let name = if cst.1 {
+                                    "bool error"
+                                } else {
+                                    "bool constraint"
+                                };
                                 let return_to = self.current;
                                 self.current = cst.0;
         
-                                let temp_var = self.create_temp_var()?;
+                                let temp_var = self.create_temp_var(name)?;
                                 if let EconValue::Str(ref s) = &temp_var.0 {
                                     if let Some(ntu) = &bool_to_use {
                                         self.locals[self.depth as usize].insert(s.clone(), 
@@ -1647,9 +1605,9 @@ impl EconParser {
                                     }
                                 }
                                 
-                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                                self.consume(Token::Arrow, format!("{}: Expect '=>' after reference.", name))?;
                                 let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                self.consume(Token::Comma, format!("{}: Expect ',' after condition.", name))?;
                                 let val = self.val_expression()?;
                                 
                                 match condition {
@@ -1667,7 +1625,7 @@ impl EconParser {
                                     }
                                     EconValue::Bool(false) => { }
                                     _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
+                                        return self.error(format!("{}: condition must be boolean.", name));
                                     }
                                 }
     
@@ -1701,10 +1659,15 @@ impl EconParser {
                         if let Some(cv) = constr_vec {
                             self.in_constraint = true;
                             for cst in cv.iter() {
+                                let name = if cst.1 {
+                                    "number error"
+                                } else {
+                                    "number constraint"
+                                };
                                 let return_to = self.current;
                                 self.current = cst.0;
         
-                                let temp_var = self.create_temp_var()?;
+                                let temp_var = self.create_temp_var(name)?;
                                 if let EconValue::Str(ref s) = &temp_var.0 {
                                     if let Some(ntu) = &num_to_use {
                                         self.locals[self.depth as usize].insert(s.clone(), 
@@ -1717,9 +1680,9 @@ impl EconParser {
                                     }
                                 }
                                 
-                                self.consume(Token::Arrow, "Expect '=>' after iterator.".to_string())?;
+                                self.consume(Token::Arrow, format!("{}: Expect '=>' after reference.", name))?;
                                 let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                self.consume(Token::Comma, format!("{}: Expect ',' after condition.", name))?;
                                 let val = self.val_expression()?;
                                 
                                 match condition {
@@ -1737,7 +1700,7 @@ impl EconParser {
                                     }
                                     EconValue::Bool(false) => { }
                                     _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
+                                        return self.error(format!("{}: condition must be boolean.", name));
                                     }
                                 }
     
@@ -1771,10 +1734,15 @@ impl EconParser {
                         if let Some(cv) = constr_vec {
                             self.in_constraint = true;
                             for cst in cv.iter() {
+                                let name = if cst.1 {
+                                    "nil error"
+                                } else {
+                                    "nil constraint"
+                                };
                                 let return_to = self.current;
                                 self.current = cst.0;
         
-                                let temp_var = self.create_temp_var()?;
+                                let temp_var = self.create_temp_var(name)?;
                                 if let EconValue::Str(ref s) = &temp_var.0 {
                                     if let Some(ntu) = &nil_to_use {
                                         self.locals[self.depth as usize].insert(s.clone(), 
@@ -1787,9 +1755,9 @@ impl EconParser {
                                     }
                                 }
                                 
-                                self.consume(Token::Arrow, "Expect '=>' after reference.".to_string())?;
+                                self.consume(Token::Arrow, format!("{}: Expect '=>' after reference.", name))?;
                                 let condition = self.val_expression()?;
-                                self.consume(Token::Comma, "Expect ',' after condition.".to_string())?;
+                                self.consume(Token::Comma, format!("{}: Expect ',' after condition.", name))?;
                                 let val = self.val_expression()?;
                                 
                                 match condition {
@@ -1806,7 +1774,7 @@ impl EconParser {
                                         nil_to_use = Some(val);
                                     }
                                     _ => {
-                                        return self.error("Constraint condition must be boolean.".to_string());
+                                        return self.error(format!("{}: condition must be boolean.", name));
                                     }
                                 }
     
@@ -1829,6 +1797,80 @@ impl EconParser {
             _ => { Ok(input) }
         }
     }
+
+    fn constraint_pre_process(&mut self) -> Result<(), String> {
+        loop {
+            match self.peek().clone() {
+                Token::ConstraintMacro => {
+                    self.eat();
+                    self.consume(Token::LeftCurl, "Expected '{' after '@'.".to_string())?;
+                    
+                    if let Token::Str(s) = self.peek().clone() {
+                        self.eat();
+                        self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                        let start_of = self.current;
+                        
+                        if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
+                            v.push((start_of, false));
+                        } else {
+                            self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, false)));
+                        }
+                        
+                        loop {
+                            if self.match_single(Token::RightCurl) {
+                                break;
+                            }
+                            if self.match_single(Token::EOF) {
+                                return self.error("Unterminated Constraint Macro.".to_string());    
+                            }
+                            self.eat();
+                        }
+
+                        if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                            continue;    
+                        }
+                    } else {
+                        return self.error("Constraint Macro preprocessor Error.".to_string());    
+                    }
+                }
+                Token::ErrorMacro => {
+                    self.eat();
+                    self.consume(Token::LeftCurl, "Expected '{' after '@!'.".to_string())?;
+                    
+                    if let Token::Str(s) = self.peek().clone() {
+                        self.eat();
+                        self.consume(Token::Comma, "Expected ',' after Error Type.".to_string())?;
+                        let start_of = self.current;
+                        
+                        if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
+                            v.push((start_of, true));
+                        } else {
+                            self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, true)));
+                        }
+                        
+                        loop {
+                            if self.match_single(Token::RightCurl) {
+                                break;
+                            }
+                            if self.match_single(Token::EOF) {
+                                return self.error("Unterminated Error Macro.".to_string());    
+                            }
+                            self.eat();
+                        }
+
+                        if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                            continue;    
+                        }
+                    } else {
+                        return self.error("Error Macro preprocessor Error.".to_string());    
+                    }
+                }
+                _ => { break; }
+            }
+        }
+        
+        Ok(())
+    }
     
     fn expression(&mut self) -> Result<(String, EconValue), String> {
         self.key()
@@ -1841,7 +1883,7 @@ impl EconParser {
             self.depth += 1;
             self.block()
         } else {
-            self.error("Object Error.".to_string())
+            self.error(format!("Expect '{{' to begin Object definition got {:?}.", self.peek()))
         }
     }
     
@@ -1863,7 +1905,7 @@ impl EconParser {
                 self.consume(Token::Comma, "Expect ','.".to_string())?;  
             }
         }
-        self.consume(Token::RightCurl, "Expect '}' after block.".to_string())?;
+        self.consume(Token::RightCurl, "Expect '}' to terminate Object definition.".to_string())?;
         Ok(EconValue::Obj(result))
     }
 
