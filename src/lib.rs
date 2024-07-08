@@ -43,6 +43,9 @@ mod tests {
     fn large_from_file() {
         //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/large-file.json").unwrap()).expect("JSON was not well-formatted");
         //println!("{}", a);
+        if let Err(e) = Econ::create("test/large-file.json", false) {
+            panic!("{}", e);
+        }
         assert_eq!(true, matches!(Econ::create("test/large-file.json", false), Ok(_)));
     }
 
