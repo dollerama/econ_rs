@@ -167,12 +167,12 @@ Logical operators are similar to other programming languages and you can use the
 >Input
 ```js
 {
-	"a": false,
-	"b": true,
-	"c": $a && $b,
-	"d": $a or $b,
-	"e": not $d,
-	"f": ~($c and $a) or $e
+	a: false,
+	b: true,
+	c: $a && $b,
+	d: $a or $b,
+	e: not $d,
+	f: ~($c and $a) or $e
 }
 ```
 >Output
@@ -196,19 +196,19 @@ Logical operators are similar to other programming languages and you can use the
 	d: 10 ~= 5,
 	e: "Hello" == "Not Hello",
 	f: 20 <= 20,
-	g: 30 >= 30,
+	g: 30 >= 30
 }
 ```
 >Output
 ```js
 {
-	"a": false
+	"a": false,
 	"b": true,
 	"c": true,
 	"d": true,
 	"e": false,
 	"f": true,
-	"g": true,
+	"g": true
 }
 ```
 ### Ternary
@@ -247,7 +247,7 @@ a: $arr.(1+1) //outputs -> 3
 	"a": [1,2,3,4,5],
 	"a_1": 2,
 	"a_0": 1,
-	"a_4": 5
+	"a_4": 5,
 	"b": { 
 		"name": "Dill", 
 		"age": 20 
@@ -296,7 +296,6 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 >Input
 ```js
 {
-	{
 	a: 10,
 	b: $a*2,
 	c: {
@@ -322,7 +321,7 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
  - [Filter](#Filter) ``filter(obj/array, iter => condition) -> obj/array``
  - [Map](#Map) ``map(obj/array, iter => expr) -> obj/array``
  - [Chars](#Chars) ``chars(string) -> array``
- - [To String](#To-String) ``to_string(array) -> string``
+ - [To String](#To-String) ``to_string(any) -> string``
  - [Keys](#Keys) ``keys(obj) -> array``
  - [Values](#Values) ``values(obj) -> array``
  - [Fold](#Fold) ``fold(obj/array, |iter, acc| => expr) -> literal``
@@ -380,8 +379,8 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 	}
 }
 ```
- ##### Example Array
- >Input
+##### Example Array
+>Input
 ```js
 {
 	a: map([0,1,2,3,4,5], i => $i+1)
@@ -399,9 +398,9 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 	]
 }
 ```
- ### Chars
- Takes a string and returns an Array of chars.
-  ##### Example
+### Chars
+Takes a string and returns an Array of chars.
+##### Example
  >Input
 ```js
 {
@@ -420,24 +419,32 @@ Similar to ``$`` but it will walk up the object depth until it finds the key.
 	]
 }
 ```
- ### To String
- Takes an Array of chars and returns a string.
-  ##### Example
+### To String
+Takes any type and returns a string. Most of the types are straight forward but Objects will take all values and concatentate them in order.
+##### Example
  >Input
 ```js
 {
-	a: to_string(["H", "e", "l", "l", "o"])
+	a: to_string(["H", "e", "l", "l", "o"]),
+        b: to_string({a: "hello", b: "world"}),
+        c: to_string(nil),
+        d: to_string(true),
+        e: to_string([1,2,3,[7,4],{a:nil}])
 }
 ```
 >Output
 ```js
 {
-	"a": "Hello"
+	"a": "Hello",
+        "b": "helloworld",
+        "c": "nil",
+        "d": "true",
+        "e": "12374nil"
 }
 ```
- ### Keys
- Takes an Object and returns and Array of keys.
-  ##### Example
+### Keys
+Takes an Object and returns and Array of keys.
+##### Example
  >Input
 ```js
 {
