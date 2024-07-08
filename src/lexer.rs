@@ -214,8 +214,10 @@ impl<'a> EconLexer<'a> {
                 self.eat();
             } else {
                 if let Some("\\") = self.peek_prev() {
-                    self.eat();
-                    continue;
+                    if v == "\"" {
+                        self.eat();
+                        continue;
+                    }
                 }
                 break;
             }
