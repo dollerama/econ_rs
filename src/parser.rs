@@ -115,7 +115,7 @@ impl EconParser {
     fn equality(&mut self) -> Result<EconValue, String> {
         let mut left = self.comparison()?;
         
-        loop {
+        while !self.at_end() {
             match self.peek() {
                 Token::Equal => {
                     self.eat();
@@ -177,7 +177,7 @@ impl EconParser {
     fn comparison(&mut self) -> Result<EconValue, String> {
         let mut left = self.term()?;
         
-        loop {
+        while !self.at_end() {
             match self.peek() {
                 Token::Less => {
                     self.eat();
@@ -296,7 +296,7 @@ impl EconParser {
     fn term(&mut self) -> Result<EconValue, String> {
         let mut left = self.factor()?;
         
-        loop {
+        while !self.at_end() {
             match self.peek() {
                 Token::Plus => {
                     self.eat();
@@ -448,7 +448,7 @@ impl EconParser {
     fn factor(&mut self) -> Result<EconValue, String> {
         let mut left = self.unary()?;
         
-        loop {
+        while !self.at_end() {
             match self.peek() {
                 Token::Mult => {
                     self.eat();
@@ -1908,7 +1908,7 @@ impl EconParser {
         Ok(EconValue::Obj(result))
     }
 
-    pub fn parse(&mut self, lexer: &mut EconLexer, debug: bool) -> Result<Vec<EconValue>, String> {
+    pub fn parse(&mut self, lexer: &mut EconLexer, debug: bool) -> Result<EconValue, String> {
         if debug {  
             println!("----Src----"); 
             println!("{}", lexer.source);
@@ -1953,37 +1953,18 @@ impl EconParser {
             println!("----Parse----"); 
         }
 
-        let mut result = vec!();
-        let mut many = false;
-        loop {
-            many = self.match_single(Token::LeftBracket);
-            match self.object() {
-                Ok(value) => {
-                    match value {
-                        EconValue::Obj(v) => {
-                            if debug { 
-                                println!("[Completed in {} ms]", now.elapsed().as_millis()); 
-                                println!("{}", &v);
-                            }
-                            if !many {
-                                return Ok(vec!(EconValue::Obj(v)));
-                            } else {
-                                result.push(EconValue::Obj(v));
-                            }
-                        }
-                        _ => {
-                            return self.error(String::from("Object not found."));
-                        }
-                    }
+        let result = match self.val_expression() {
+            Ok(value) => {
+                if debug { 
+                    println!("[Completed in {} ms]", now.elapsed().as_millis()); 
+                    println!("{}", &value);
                 }
-                Err(e) => { return Err(e); }
+                value
             }
-            if self.match_single(Token::RightBracket) {
-                break;
-            } else {
-                self.consume(Token::Comma, "Expected ','".to_string());
+            Err(e) => {
+                return Err(e)
             }
-        }
+        };
 
         Ok(result)
     }
