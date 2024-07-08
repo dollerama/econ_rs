@@ -1901,7 +1901,7 @@ impl EconParser {
                 self.locals[self.depth as usize].insert(key_val.0, key_val.1);
             }
             if !self.check(Token::RightCurl) {
-                self.consume(Token::Comma, "Expect ',' or '}'.".to_string())?;  
+                self.consume(Token::Comma, format!("Expect ',' or '}' got {:?}.", self.peek()))?;  
             }
         }
         self.consume(Token::RightCurl, "Expect '}' to terminate Object definition.".to_string())?;
