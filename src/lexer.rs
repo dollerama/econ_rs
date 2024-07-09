@@ -192,7 +192,7 @@ impl<'a> EconLexer<'a> {
             }
         }
         
-        let build = self.source_as_vec[self.start..self.current].join("");
+        let build = self.source_as_vec[self.start..self.current].concat();
         let string_to_use = build.parse::<f64>();
             
         match string_to_use {
@@ -223,7 +223,7 @@ impl<'a> EconLexer<'a> {
             self.error("Unterminated String.".to_string())
         } else {
             self.eat();
-            let build = self.source_as_vec[self.start+1..self.current-1].join("");
+            let build = self.source_as_vec[self.start+1..self.current-1].concat();
             self.make_token(Token::Str(String::from(build)))
         }
     }
@@ -259,7 +259,7 @@ impl<'a> EconLexer<'a> {
                 self.start += 1;
             }
             
-            let build = self.source_as_vec[self.start+1..self.current].join("");
+            let build = self.source_as_vec[self.start+1..self.current].concat();
             Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
         }
     }
@@ -270,7 +270,7 @@ impl<'a> EconLexer<'a> {
             self.eat();
         }
 
-        let build = self.source_as_vec[self.start..self.current].join("");
+        let build = self.source_as_vec[self.start..self.current].concat();
         
         if build == "true" {
             self.make_token(Token::Bool(true))
@@ -310,7 +310,7 @@ impl<'a> EconLexer<'a> {
                 self.eat();
             }
             
-            let build = self.source_as_vec[self.start..self.current].join("");
+            let build = self.source_as_vec[self.start..self.current].concat();
             self.make_token(Token::Str(build))
         }
     }
