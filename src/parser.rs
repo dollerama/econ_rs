@@ -1463,7 +1463,7 @@ impl EconParser {
     }
     
     fn val_expression(&mut self) -> Result<EconValue, String> {
-        let val = if let Token::Comma | Token::RightCurl = self.peek_next() {
+        let val = if let Token::Comma | Token::RightCurl | Token::RightBracket | Token::Colon = self.peek_next() {
             self.primary()?
         } else {
             self.equality()?
