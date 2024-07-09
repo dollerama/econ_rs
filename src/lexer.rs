@@ -121,7 +121,7 @@ impl<'a> EconLexer<'a> {
     }
     
     fn eat(&mut self) {
-        let t = self.peek().clone().unwrap();
+        let t = self.peek().unwrap().clone();
         self.current_string_read.push_str(t);
         self.current += 1;
     }
