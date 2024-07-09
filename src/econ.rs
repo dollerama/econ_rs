@@ -127,6 +127,7 @@ impl Econ {
     /// # Examples
     /// ```rust
     /// use econ_rs::econ::Econ;
+    /// use serde::{Serialize, Deserialize};
     ///
     /// #[derive(Debug, Serialize, Deserialize)]
     /// struct Point {
