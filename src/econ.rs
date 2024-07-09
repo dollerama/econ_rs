@@ -5,6 +5,8 @@ use crate::{lexer::EconLexer, object::EconObj, parser::EconParser, value::EconVa
 /// Parse Econ from strings or files. Access values directly or deserialize into rust structs.
 /// # Examples
 /// ```rust
+/// use econ_rs::econ::Econ;
+///
 /// let obj = Econ::from(
 /// r#"
 /// {
