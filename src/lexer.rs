@@ -78,7 +78,8 @@ pub struct EconLexer<'a> {
     start: usize,
     current: usize,
     macros: HashMap<String, (Vec<TokenData>, Vec<TokenData>)>,
-    source_as_vec: Vec<&'a str>
+    source_as_vec: Vec<&'a str>,
+    current_string_read: String
 }
 
 impl<'a> EconLexer<'a> {
@@ -89,7 +90,8 @@ impl<'a> EconLexer<'a> {
             current: 0,
             line: 0,
             macros: HashMap::new(),
-            source_as_vec: source.graphemes(true).collect::<Vec<&'a str>>()
+            source_as_vec: source.graphemes(true).collect::<Vec<&'a str>>(),
+            current_string_read: String::from("")
         }
     }
     
@@ -119,6 +121,7 @@ impl<'a> EconLexer<'a> {
     }
     
     fn eat(&mut self) {
+        current_string_read.push_str(self.peek().unwrap());
         self.current += 1;
     }
     
@@ -192,7 +195,7 @@ impl<'a> EconLexer<'a> {
             }
         }
         
-        let build = self.source_as_vec[self.start..self.current].concat();
+        let build = self.current_string_read[self.start..self.current].to_string();
         let string_to_use = build.parse::<f64>();
             
         match string_to_use {
@@ -222,8 +225,8 @@ impl<'a> EconLexer<'a> {
         if self.at_end() {
             self.error("Unterminated String.".to_string())
         } else {
+            let build = self.current_string_read[1..].to_string();
             self.eat();
-            let build = self.source_as_vec[self.start+1..self.current-1].concat();
             self.make_token(Token::Str(String::from(build)))
         }
     }
@@ -259,7 +262,7 @@ impl<'a> EconLexer<'a> {
                 self.start += 1;
             }
             
-            let build = self.source_as_vec[self.start+1..self.current].concat();
+            let build = self.current_string_read[self.start+1..].to_string();
             Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
         }
     }
@@ -270,7 +273,7 @@ impl<'a> EconLexer<'a> {
             self.eat();
         }
 
-        let build = self.source_as_vec[self.start..self.current].concat();
+        let build = self.current_string_read[self.start..].to_string();
         
         if build == "true" {
             self.make_token(Token::Bool(true))
@@ -310,7 +313,7 @@ impl<'a> EconLexer<'a> {
                 self.eat();
             }
             
-            let build = self.source_as_vec[self.start..self.current].concat();
+            let build = self.current_string_read[self.start..].to_string();
             self.make_token(Token::Str(build))
         }
     }
@@ -478,6 +481,7 @@ impl<'a> EconLexer<'a> {
     
     pub fn scan(&mut self) -> Result<TokenData, String> {
         self.skip_whitespace()?;
+        self.current_string_read = String::from("");
         self.start = self.current;
         
         if self.at_end() { 
