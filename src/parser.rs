@@ -9,10 +9,13 @@ pub struct EconParser {
     locals: Vec<HashMap<String, EconValue>>,
     constraints: Vec<HashMap<String, Vec<(usize, bool)>>>,
     depth: isize,
-    in_constraint: bool
+    in_constraint: bool,
+    in_try: bool
 }
 
 impl EconParser {
+    const NIL: Token = Token::Nil;
+
     pub fn new(src: &str) -> Self {
         Self {
             tokens: vec!(),
@@ -21,7 +24,8 @@ impl EconParser {
             locals: vec!(),
             constraints: vec!(),
             depth: -1,
-            in_constraint: false
+            in_constraint: false,
+            in_try: false
         }
     }
     
@@ -1092,6 +1096,16 @@ impl EconParser {
     
     fn primary(&mut self) -> Result<EconValue, String> {
         match self.peek().clone() {
+            Token::Try => {
+                if self.in_try {
+                    return self.error("Already inside Try block.".to_string())
+                }
+                self.eat();
+                self.eat();
+
+                self.in_try = true;
+                self.val_expression()
+            }
             Token::Fn(func) => {
                 match func {
                     Function::Filter => {
@@ -1460,8 +1474,12 @@ impl EconParser {
     }
     
     fn val_expression(&mut self) -> Result<EconValue, String> {
-        let val = if let Token::Comma | Token::RightCurl | Token::RightBracket | Token::Colon = self.peek_next() {
-            self.primary()?
+        let val = if self.current+1 < self.tokens.len() {
+            // if let Token::Comma | Token::RightCurl | Token::RightBracket | Token::Colon = self.peek_next() {
+            //     self.primary()?
+            // } else {
+                self.equality()?
+            //}
         } else {
             self.equality()?
         };
@@ -1487,14 +1505,28 @@ impl EconParser {
         Ok(EconValue::Arr(result))
     }
     
-    fn key(&mut self) -> Result<(String, EconValue), String> {
-        let v_key = self.val_expression()?;
+    fn key(&mut self) -> Result<(String, EconValue), (String, String)> {
+        let v_key = match self.val_expression() {
+            Ok(v) => v,
+            Err(e) => return Err(("".to_string(), e)),
+        };
             
         if let EconValue::Str(s) = v_key {
-            self.consume(Token::Colon, "Expected ':' after Key identifier".to_string())?;
-            Ok((s.clone(), self.val_expression()?))
+            match self.consume(Token::Colon, format!("Expected ':' after Key identifier got {:?}.", self.peek())) {
+                Ok(_) => {},
+                Err(e) => return Err(("".to_string(), e))
+            }
+
+            match self.val_expression() {
+                Ok(v) => Ok((s.clone(), v)),
+                Err(e) => Err((s.clone(), e)),
+            }
         } else {
-            self.error(format!("Expected Key got: {}.", v_key))
+            if let Err(e) = self.error::<String>(format!("Expected Key got: {}.", v_key)) {
+                Err(("".to_string(), e))
+            } else {
+                Err(("".to_string(), "".to_string()))
+            }
         }
     }
 
@@ -1918,7 +1950,7 @@ impl EconParser {
         Ok(())
     }
     
-    fn expression(&mut self) -> Result<(String, EconValue), String> {
+    fn expression(&mut self) -> Result<(String, EconValue), (String,String)> {
         self.key()
     }
     
@@ -1939,18 +1971,38 @@ impl EconParser {
         while !self.check(Token::RightCurl) && !self.at_end() {
             self.constraint_pre_process()?;
 
-            let key_val = self.expression()?;
+            let v = self.expression();
+
+            let key_val = if self.in_try {
+                if let Err(e) = &v {
+                    (e.0.clone(), EconValue::Nil)
+                } else {
+                    (v.clone().unwrap().0, v.unwrap().1)
+                }
+            } else {
+                match &v {
+                    Ok(v) => v.to_owned(),
+                    Err(e) => return Err(e.1.clone())
+                }
+            };
+
             if let Some(_) = result.data.get(&key_val.0) {
                 return self.error("Duplicate Key.".to_string());
             } else {
                 result.data.insert(key_val.0.clone(), key_val.1.clone());
                 self.locals[self.depth as usize].insert(key_val.0, key_val.1);
             }
+
+            
             if !self.check(Token::RightCurl) {
                 self.consume(Token::Comma, format!("Expect ',' or '}}' got {:?}.", self.peek()))?;  
             }
+
+            if self.in_try && self.match_single(Token::RightCurl) {
+                self.in_try = false;
+            }
         }
-        self.consume(Token::RightCurl, "Expect '}' to terminate Object definition.".to_string())?;
+        self.consume(Token::RightCurl, format!("Expect '}}' to terminate Object definition got {:?}.", self.peek()))?;
         Ok(EconValue::Obj(result))
     }
 

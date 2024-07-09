@@ -55,6 +55,7 @@ pub enum Token {
     Pipe,
     ConstraintMacro,
     ErrorMacro,
+    Try,
     EOF,
 }
 
@@ -307,6 +308,18 @@ impl<'a> EconLexer<'a> {
             self.make_token(Token::Fn(Function::Sort))
         } else if build == "zip" {
             self.make_token(Token::Fn(Function::Zip))
+        } else if build == "try" {
+            if let Some("{") = self.peek_next() {
+                self.make_token(Token::Try)
+            } else {
+                while let Some(v) = self.peek() {
+                    if !Self::is_alpha(v) && !Self::is_digit(v) { break; }
+                    self.eat();
+                }
+                
+                let build = self.current_string_read[0..].to_string();
+                self.make_token(Token::Str(build))
+            }
         } else {
             while let Some(v) = self.peek() {
                 if !Self::is_alpha(v) && !Self::is_digit(v) { break; }
