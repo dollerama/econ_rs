@@ -1464,9 +1464,9 @@ impl EconParser {
     
     fn val_expression(&mut self) -> Result<EconValue, String> {
         let val = if let Token::Comma | Token::RightCurl = self.peek_next() {
-            self.primary()?;
+            self.primary()?
         } else {
-            self.equality()?;
+            self.equality()?
         };
         self.check_val_with_constraint(val)
     }
