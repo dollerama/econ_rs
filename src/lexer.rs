@@ -98,10 +98,6 @@ impl<'a> EconLexer<'a> {
     fn error<T>(&self, msg: String) -> Result<T, String> {
         Err(format!("Line:[{:04}] -> Error Lexing -> {}", self.line, msg.clone()))
     }
-
-    fn peek_prev(&self) -> Option<&str> {
-        self.source_as_vec.get(self.current-1).copied()
-    }
     
     fn peek(&self) -> Option<&str> {
         self.source_as_vec.get(self.current).copied()

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt, ops::{Index, IndexMut}};
+use std::fmt;
 
 use indexmap::IndexMap;
 

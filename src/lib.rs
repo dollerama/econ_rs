@@ -6,10 +6,9 @@ pub mod parser;
 
 #[cfg(test)]
 mod tests {
-    use std::{fmt::Debug, fs, path::PathBuf, str::FromStr};
+    use std::fmt::Debug;
 
     use econ::Econ;
-    use object::Access;
     use serde::{Deserialize, Serialize};
 
     use super::*;
@@ -55,8 +54,6 @@ mod tests {
             a: to_string(map(chars($aa), x => $x == "," ? " " : $x))
         }
         "#, true);
-
-        println!("{:?}", obj);
 
         assert_eq!(true, matches!(obj, Ok(_)));
     }
@@ -136,13 +133,13 @@ mod tests {
 
     #[test]
     fn econ_deserialize() {
-        #[derive(Debug, Serialize, Deserialize)]
+        #[derive(Debug, Serialize, Deserialize, PartialEq)]
         struct Point {
             x: f64,
             y: f64
         }
 
-        let mut p = Point {x: 0.0, y: 0.0};
+        let p;
         let obj = Econ::from(
         r#"
         {
@@ -151,7 +148,7 @@ mod tests {
         }
         "#);
         p = Econ::to_struct::<Point>(&obj).unwrap();
-        println!("{:?}", p);
+        assert_eq!(Point{x: 2.0, y: 7.0}, p);
     }
 }
 

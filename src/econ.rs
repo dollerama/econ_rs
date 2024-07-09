@@ -1,6 +1,6 @@
-use std::{fs, path::PathBuf, result, str::FromStr};
+use std::{fs, path::PathBuf, str::FromStr};
 
-use crate::{lexer::EconLexer, object::EconObj, parser::EconParser, value::EconValue};
+use crate::{lexer::EconLexer, parser::EconParser, value::EconValue};
 
 /// Parse Econ from strings or files. Access values directly or deserialize into rust structs.
 /// # Examples
@@ -76,7 +76,7 @@ impl Econ {
                         }
                         result
                     }
-                    Err(e) => {
+                    Err(_) => {
                         let mut parser = EconParser::new(src);
                         let mut lexer = EconLexer::init(src);
                         let result = parser.parse(&mut lexer, debug);
