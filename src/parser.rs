@@ -52,10 +52,7 @@ impl EconParser {
     }
     
     fn at_end(&self) -> bool {
-        match self.tokens.get(self.current) {
-            Some(_) => { false }
-            None => { true }
-        }
+        self.current >= self.tokens.len()
     }
     
     fn check(&self, t: Token) -> bool {
