@@ -62,6 +62,25 @@ impl Econ {
         }
     }
 
+    /// create an EconValue from ```&str``` or file path. Does not include any debug info. Prints error message and returns ```EconValue::Nil``` on fail.
+    /// # Examples
+    /// ```rust
+    /// use econ_rs::econ::Econ;
+    ///
+    /// let obj = Econ::from(
+    /// r#"
+    /// {
+    ///     a: 1,
+    ///     b: 2,
+    ///     c: 3
+    /// }
+    /// "#);
+    /// ```
+    /// ```rust,ignore
+    /// use econ_rs::econ::Econ;
+    ///
+    /// let obj = Econ::from("path/file.econ");
+    /// ```
     pub fn from(src: &str) -> EconValue {
         match PathBuf::try_from(src) {
             Ok(pb) => {
@@ -104,6 +123,26 @@ impl Econ {
         }
     }
 
+    /// Deserialize Econ into a struct.
+    /// # Examples
+    /// ```rust
+    /// use econ_rs::econ::Econ;
+    ///
+    /// #[derive(Debug, Serialize, Deserialize)]
+    /// struct Point {
+    ///     x: f64,
+    ///     y: f64
+    /// }
+    ///
+    /// let mut p = Point {x: 0.0, y: 0.0};
+    /// let obj = Econ::from(
+    /// r#"
+    /// {
+    ///     x: 1+1,
+    ///     y: 2+5
+    /// }
+    /// "#);
+    /// ```
     pub fn to_struct<T: for<'a> serde::de::Deserialize<'a>>(obj: &EconValue) -> Result<T, String> {
         if let EconValue::Obj(o) = &obj {
             let result: Result<T, serde_json::Error> = serde_json::from_str(o.stringify().as_str());
