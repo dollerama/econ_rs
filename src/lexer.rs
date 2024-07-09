@@ -200,8 +200,7 @@ impl<'a> EconLexer<'a> {
             }
         }
         
-        let build = self.current_string_read[self.start..self.current].to_string();
-        let string_to_use = build.parse::<f64>();
+        let string_to_use = self.current_string_read.parse::<f64>();
             
         match string_to_use {
             Ok(val) => {
@@ -267,7 +266,7 @@ impl<'a> EconLexer<'a> {
                 self.start += 1;
             }
             
-            let build = self.current_string_read[self.start+1..].to_string();
+            let build = self.current_string_read[1..].to_string();
             Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
         }
     }
@@ -278,7 +277,7 @@ impl<'a> EconLexer<'a> {
             self.eat();
         }
 
-        let build = self.current_string_read[self.start..].to_string();
+        let build = &self.current_string_read;
         
         if build == "true" {
             self.make_token(Token::Bool(true))
@@ -318,7 +317,7 @@ impl<'a> EconLexer<'a> {
                 self.eat();
             }
             
-            let build = self.current_string_read[self.start..].to_string();
+            let build = self.current_string_read[0..].to_string();
             self.make_token(Token::Str(build))
         }
     }
