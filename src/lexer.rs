@@ -250,7 +250,7 @@ impl<'a> EconLexer<'a> {
             self.error("Unterminated Variable.".to_string())
         } else {
             let mut search = 0;
-            while let Some(v) = self.source.graphemes(true).nth(self.start) {
+            while let Some(v) = self.source_as_vec.get(self.start).copied() {
                 if let "!" = v {
                     search = -1;
                     break;
