@@ -116,13 +116,17 @@ impl<'a> EconLexer<'a> {
     }
     
     fn advance(&mut self) -> Option<&str> {
+        let t = self.source_as_vec.get(self.current).copied().unwrap();
+        self.current_string_read.push_str(t);
+        
         self.current += 1;
         self.source_as_vec.get(self.current-1).copied()
     }
     
     fn eat(&mut self) {
-        let t = self.peek().unwrap().clone();
+        let t = self.source_as_vec.get(self.current).copied().unwrap();
         self.current_string_read.push_str(t);
+        
         self.current += 1;
     }
     
