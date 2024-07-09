@@ -1467,7 +1467,7 @@ impl EconParser {
             self.primary()?;
         } else {
             self.equality()?;
-        }
+        };
         self.check_val_with_constraint(val)
     }
     
