@@ -29,6 +29,10 @@ impl EconParser {
         &self.tokens[self.current].token
     }
     
+    fn peek_next(&self) -> &Token {
+        &self.tokens[self.current+1].token
+    }
+    
     fn peek_full(&self) -> &TokenData {
         &self.tokens[self.current]
     }
@@ -1459,7 +1463,11 @@ impl EconParser {
     }
     
     fn val_expression(&mut self) -> Result<EconValue, String> {
-        let val = self.equality()?;
+        let val = if let Token::Comma | Token::RightCurl = self.peek_next() {
+            self.primary()?;
+        } else {
+            self.equality()?;
+        }
         self.check_val_with_constraint(val)
     }
     
