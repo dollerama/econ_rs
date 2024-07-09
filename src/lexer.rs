@@ -154,7 +154,7 @@ impl<'a> EconLexer<'a> {
     }
      
     fn at_end(&self) -> bool {
-        self.source_as_vec.get(self.current).is_none()
+        self.current >= self.source_as_vec.len()
     }
     
     fn is_digit(c: &str) -> bool {
@@ -192,10 +192,7 @@ impl<'a> EconLexer<'a> {
             }
         }
         
-        let mut build = String::from("");
-        for i in self.start..self.current {
-            build.push_str(self.source_as_vec[i]);
-        }
+        let build = self.source_as_vec[self.start..self.current].join("");
         let string_to_use = build.parse::<f64>();
             
         match string_to_use {
@@ -226,10 +223,7 @@ impl<'a> EconLexer<'a> {
             self.error("Unterminated String.".to_string())
         } else {
             self.eat();
-            let mut build = String::from("");
-            for i in self.start+1..self.current-1 {
-                build.push_str(self.source_as_vec[i]);
-            }
+            let build = self.source_as_vec[self.start+1..self.current-1].join("");
             self.make_token(Token::Str(String::from(build)))
         }
     }
@@ -264,10 +258,8 @@ impl<'a> EconLexer<'a> {
                 }
                 self.start += 1;
             }
-            let mut build = String::from("");
-            for i in self.start+1..self.current {
-                build.push_str(self.source_as_vec[i]);
-            }
+            
+            let build = self.source_as_vec[self.start+1..self.current].join("");
             Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
         }
     }
@@ -278,10 +270,7 @@ impl<'a> EconLexer<'a> {
             self.eat();
         }
 
-        let mut build = String::from("");
-        for i in self.start..self.current {
-            build.push_str(self.source_as_vec[i]);
-        }
+        let build = self.source_as_vec[self.start..self.current].join("");
         
         if build == "true" {
             self.make_token(Token::Bool(true))
@@ -321,10 +310,7 @@ impl<'a> EconLexer<'a> {
                 self.eat();
             }
             
-            let mut build = String::from("");
-            for i in self.start..self.current {
-                build.push_str(self.source_as_vec[i]);
-            }
+            let build = self.source_as_vec[self.start..self.current].join("");
             self.make_token(Token::Str(build))
         }
     }
