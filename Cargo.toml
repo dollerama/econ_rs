@@ -10,3 +10,6 @@ indexmap = "*"
 serde_json = "*"
 serde = { version = "*", features = ["derive"] }
 unicode-segmentation = "*"
+
+[profile.test]
+inherits = "release"
