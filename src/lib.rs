@@ -13,7 +13,7 @@ mod tests {
     use serde::{Deserialize, Serialize};
 
     use super::*;
-    /*
+
     #[test]
     fn simple() {
         let obj = Econ::create(
@@ -38,7 +38,7 @@ mod tests {
         //println!("{}", a);
         assert_eq!(true, matches!(Econ::create("test/Complex.econ", true), Ok(_)));
     }
-    */
+
     #[test]
     fn large_from_file() {
         //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/large-file.json").unwrap()).expect("JSON was not well-formatted");
@@ -48,7 +48,7 @@ mod tests {
         }
         assert_eq!(true, matches!(Econ::create("test/large-file.json", false), Ok(_)));
     }
-    /*
+
     #[test]
     fn functions() {
         let obj = Econ::create(
@@ -156,6 +156,5 @@ mod tests {
         p = Econ::to_struct::<Point>(&obj).unwrap();
         println!("{:?}", p);
     }
-    */
 }
 
