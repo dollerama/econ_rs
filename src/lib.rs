@@ -6,10 +6,9 @@ pub mod parser;
 
 #[cfg(test)]
 mod tests {
-    use std::{fmt::Debug, fs, path::PathBuf, str::FromStr};
+    use std::fmt::Debug;
 
     use econ::Econ;
-    use object::Access;
     use serde::{Deserialize, Serialize};
 
     use super::*;
@@ -43,9 +42,6 @@ mod tests {
     fn large_from_file() {
         //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/large-file.json").unwrap()).expect("JSON was not well-formatted");
         //println!("{}", a);
-        if let Err(e) = Econ::create("test/large-file.json", false) {
-            panic!("{}", e);
-        }
         assert_eq!(true, matches!(Econ::create("test/large-file.json", false), Ok(_)));
     }
 
@@ -58,8 +54,6 @@ mod tests {
             a: to_string(map(chars($aa), x => $x == "," ? " " : $x))
         }
         "#, true);
-
-        println!("{:?}", obj);
 
         assert_eq!(true, matches!(obj, Ok(_)));
     }
@@ -139,13 +133,13 @@ mod tests {
 
     #[test]
     fn econ_deserialize() {
-        #[derive(Debug, Serialize, Deserialize)]
+        #[derive(Debug, Serialize, Deserialize, PartialEq)]
         struct Point {
             x: f64,
             y: f64
         }
 
-        let mut p = Point {x: 0.0, y: 0.0};
+        let p;
         let obj = Econ::from(
         r#"
         {
@@ -154,7 +148,7 @@ mod tests {
         }
         "#);
         p = Econ::to_struct::<Point>(&obj).unwrap();
-        println!("{:?}", p);
+        assert_eq!(Point{x: 2.0, y: 7.0}, p);
     }
 }
 

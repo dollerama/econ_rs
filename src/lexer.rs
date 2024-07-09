@@ -78,7 +78,8 @@ pub struct EconLexer<'a> {
     start: usize,
     current: usize,
     macros: HashMap<String, (Vec<TokenData>, Vec<TokenData>)>,
-    source_as_vec: Vec<&'a str>
+    source_as_vec: Vec<&'a str>,
+    current_string_read: String
 }
 
 impl<'a> EconLexer<'a> {
@@ -89,16 +90,13 @@ impl<'a> EconLexer<'a> {
             current: 0,
             line: 0,
             macros: HashMap::new(),
-            source_as_vec: source.graphemes(true).collect::<Vec<&'a str>>()
+            source_as_vec: source.graphemes(true).collect::<Vec<&'a str>>(),
+            current_string_read: String::from("")
         }
     }
     
     fn error<T>(&self, msg: String) -> Result<T, String> {
         Err(format!("Line:[{:04}] -> Error Lexing -> {}", self.line, msg.clone()))
-    }
-
-    fn peek_prev(&self) -> Option<&str> {
-        self.source_as_vec.get(self.current-1).copied()
     }
     
     fn peek(&self) -> Option<&str> {
@@ -114,11 +112,17 @@ impl<'a> EconLexer<'a> {
     }
     
     fn advance(&mut self) -> Option<&str> {
+        let t = self.source_as_vec.get(self.current).copied().unwrap();
+        self.current_string_read.push_str(t);
+        
         self.current += 1;
         self.source_as_vec.get(self.current-1).copied()
     }
     
     fn eat(&mut self) {
+        let t = self.source_as_vec.get(self.current).copied().unwrap();
+        self.current_string_read.push_str(t);
+        
         self.current += 1;
     }
     
@@ -154,7 +158,7 @@ impl<'a> EconLexer<'a> {
     }
      
     fn at_end(&self) -> bool {
-        self.source_as_vec.get(self.current).is_none()
+        self.current >= self.source_as_vec.len()
     }
     
     fn is_digit(c: &str) -> bool {
@@ -192,11 +196,7 @@ impl<'a> EconLexer<'a> {
             }
         }
         
-        let mut build = String::from("");
-        for i in self.start..self.current {
-            build.push_str(self.source_as_vec[i]);
-        }
-        let string_to_use = build.parse::<f64>();
+        let string_to_use = self.current_string_read.parse::<f64>();
             
         match string_to_use {
             Ok(val) => {
@@ -225,11 +225,8 @@ impl<'a> EconLexer<'a> {
         if self.at_end() {
             self.error("Unterminated String.".to_string())
         } else {
+            let build = self.current_string_read[1..].to_string();
             self.eat();
-            let mut build = String::from("");
-            for i in self.start+1..self.current-1 {
-                build.push_str(self.source_as_vec[i]);
-            }
             self.make_token(Token::Str(String::from(build)))
         }
     }
@@ -249,7 +246,7 @@ impl<'a> EconLexer<'a> {
             self.error("Unterminated Variable.".to_string())
         } else {
             let mut search = 0;
-            while let Some(v) = self.source.graphemes(true).nth(self.start) {
+            while let Some(v) = self.source_as_vec.get(self.start).copied() {
                 if let "!" = v {
                     search = -1;
                     break;
@@ -264,10 +261,8 @@ impl<'a> EconLexer<'a> {
                 }
                 self.start += 1;
             }
-            let mut build = String::from("");
-            for i in self.start+1..self.current {
-                build.push_str(self.source_as_vec[i]);
-            }
+            
+            let build = self.current_string_read[1..].to_string();
             Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
         }
     }
@@ -278,10 +273,7 @@ impl<'a> EconLexer<'a> {
             self.eat();
         }
 
-        let mut build = String::from("");
-        for i in self.start..self.current {
-            build.push_str(self.source_as_vec[i]);
-        }
+        let build = &self.current_string_read;
         
         if build == "true" {
             self.make_token(Token::Bool(true))
@@ -321,10 +313,7 @@ impl<'a> EconLexer<'a> {
                 self.eat();
             }
             
-            let mut build = String::from("");
-            for i in self.start..self.current {
-                build.push_str(self.source_as_vec[i]);
-            }
+            let build = self.current_string_read[0..].to_string();
             self.make_token(Token::Str(build))
         }
     }
@@ -492,6 +481,7 @@ impl<'a> EconLexer<'a> {
     
     pub fn scan(&mut self) -> Result<TokenData, String> {
         self.skip_whitespace()?;
+        self.current_string_read = String::from("");
         self.start = self.current;
         
         if self.at_end() { 

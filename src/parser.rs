@@ -29,6 +29,10 @@ impl EconParser {
         &self.tokens[self.current].token
     }
     
+    fn peek_next(&self) -> &Token {
+        &self.tokens[self.current+1].token
+    }
+    
     fn peek_full(&self) -> &TokenData {
         &self.tokens[self.current]
     }
@@ -48,10 +52,7 @@ impl EconParser {
     }
     
     fn at_end(&self) -> bool {
-        match self.tokens.get(self.current) {
-            Some(_) => { false }
-            None => { true }
-        }
+        self.current >= self.tokens.len()
     }
     
     fn check(&self, t: Token) -> bool {
@@ -87,22 +88,22 @@ impl EconParser {
         Err(result_err)
     }
 
-    fn error_at<T>(&self, msg: String, current_line: usize) -> Result<T, String> {
-        let mut result_err = String::from("");
+    // fn error_at<T>(&self, msg: String, current_line: usize) -> Result<T, String> {
+    //     let mut result_err = String::from("");
         
-        result_err.push_str(&format!("Line [{:04}] Error Parsing -> \"{}\"\n", current_line, msg.clone()));
+    //     result_err.push_str(&format!("Line [{:04}] Error Parsing -> \"{}\"\n", current_line, msg.clone()));
 
-        for (line_num, line) in self.source.lines().enumerate() {
-            if line_num+1 == current_line || (line_num != 0 && line_num-1 == current_line) {
-                result_err.push_str(&format!("[{:04}]   {}\n", line_num, line));
-            }
-            if line_num == current_line {
-                result_err.push_str(&format!("-> [{:04}]{}\n", line_num, line));
-            }
-        }
+    //     for (line_num, line) in self.source.lines().enumerate() {
+    //         if line_num+1 == current_line || (line_num != 0 && line_num-1 == current_line) {
+    //             result_err.push_str(&format!("[{:04}]   {}\n", line_num, line));
+    //         }
+    //         if line_num == current_line {
+    //             result_err.push_str(&format!("-> [{:04}]{}\n", line_num, line));
+    //         }
+    //     }
         
-        Err(result_err)
-    }
+    //     Err(result_err)
+    // }
     
     fn consume(&mut self, t: Token, msg: String) -> Result<&Token, String>  {
         if self.check(t) { 
@@ -609,11 +610,11 @@ impl EconParser {
                 let mut new_obj = EconObj::new();
                 for (j, aa) in a.data.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
-                        let mut keyVal = EconObj::new();
-                        keyVal.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
-                        keyVal.data.insert("val".to_string(), aa.1.clone());
+                        let mut key_val = EconObj::new();
+                        key_val.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
+                        key_val.data.insert("val".to_string(), aa.1.clone());
                         self.locals[self.depth as usize].insert(s.clone(), 
-                            EconValue::Obj(keyVal)
+                            EconValue::Obj(key_val)
                         );
                     } 
                     let goto_point = self.current;
@@ -816,11 +817,11 @@ impl EconParser {
                 let mut new_obj = EconObj::new();
                 for (j, aa) in a.data.iter().enumerate() {
                     if let EconValue::Str(ref s) = &temp_1.0 {
-                        let mut keyVal = EconObj::new();
-                        keyVal.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
-                        keyVal.data.insert("val".to_string(), aa.1.clone());
+                        let mut key_val = EconObj::new();
+                        key_val.data.insert("key".to_string(), EconValue::Str(aa.0.clone()));
+                        key_val.data.insert("val".to_string(), aa.1.clone());
                         self.locals[self.depth as usize].insert(s.clone(), 
-                            EconValue::Obj(keyVal)
+                            EconValue::Obj(key_val)
                         );
                     } 
                     let goto_point = self.current;
@@ -873,10 +874,10 @@ impl EconParser {
                 
                 ret
             }
-            (EconValue::Arr(aa), bb) => {
+            (EconValue::Arr(_), bb) => {
                 return self.error(format!("{}: Invalid argument 2 expected an Array got {}.", name, bb));
             }
-            (aa, EconValue::Arr(bb)) => {
+            (aa, EconValue::Arr(_)) => {
                 return self.error(format!("{}: Invalid argument 1 expected an Array got {}.", name, aa));
             }
             (aa, bb) => {
@@ -1459,7 +1460,11 @@ impl EconParser {
     }
     
     fn val_expression(&mut self) -> Result<EconValue, String> {
-        let val = self.equality()?;
+        let val = if let Token::Comma | Token::RightCurl | Token::RightBracket | Token::Colon = self.peek_next() {
+            self.primary()?
+        } else {
+            self.equality()?
+        };
         self.check_val_with_constraint(val)
     }
     
@@ -1804,66 +1809,107 @@ impl EconParser {
                 Token::ConstraintMacro => {
                     self.eat();
                     self.consume(Token::LeftCurl, "Expected '{' after '@'.".to_string())?;
-                    
-                    if let Token::Str(s) = self.peek().clone() {
-                        self.eat();
-                        self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
-                        let start_of = self.current;
-                        
-                        if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
-                            v.push((start_of, false));
-                        } else {
-                            self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, false)));
-                        }
-                        
-                        loop {
-                            if self.match_single(Token::RightCurl) {
-                                break;
-                            }
-                            if self.match_single(Token::EOF) {
-                                return self.error("Unterminated Constraint Macro.".to_string());    
-                            }
-                            self.eat();
-                        }
 
-                        if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                            continue;    
+                    match self.peek().clone() {
+                        Token::Str(s) => {
+                            self.eat();
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
+                                v.push((start_of, false));
+                            } else {
+                                self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, false)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
                         }
-                    } else {
-                        return self.error("Constraint Macro preprocessor Error.".to_string());    
+                        Token::Nil => {
+                            self.eat();
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(v) = self.constraints[self.depth as usize].get_mut("nil") {
+                                v.push((start_of, false));
+                            } else {
+                                self.constraints[self.depth as usize].insert("nil".to_string(), vec!((start_of, false)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
+                        }
+                        _ => { return self.error("Constraint Macro preprocessor Error.".to_string()); }
                     }
                 }
                 Token::ErrorMacro => {
                     self.eat();
                     self.consume(Token::LeftCurl, "Expected '{' after '@!'.".to_string())?;
-                    
-                    if let Token::Str(s) = self.peek().clone() {
-                        self.eat();
-                        self.consume(Token::Comma, "Expected ',' after Error Type.".to_string())?;
-                        let start_of = self.current;
-                        
-                        if let Some(mut v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
-                            v.push((start_of, true));
-                        } else {
-                            self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, true)));
-                        }
-                        
-                        loop {
-                            if self.match_single(Token::RightCurl) {
-                                break;
-                            }
-                            if self.match_single(Token::EOF) {
-                                return self.error("Unterminated Error Macro.".to_string());    
-                            }
-                            self.eat();
-                        }
 
-                        if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
-                            continue;    
+                    match self.peek().clone() {
+                        Token::Str(s) => {
+                            self.eat();                        
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(v) = self.constraints[self.depth as usize].get_mut(s.as_str()) {
+                                v.push((start_of, true));
+                            } else {
+                                self.constraints[self.depth as usize].insert(s.clone(), vec!((start_of, true)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
                         }
-                    } else {
-                        return self.error("Error Macro preprocessor Error.".to_string());    
+                        Token::Nil => {
+                            self.eat();                        
+                            self.consume(Token::Comma, "Expected ',' after Constraint Type.".to_string())?;
+                            let start_of = self.current;
+                            
+                            if let Some(v) = self.constraints[self.depth as usize].get_mut("nil") {
+                                v.push((start_of, true));
+                            } else {
+                                self.constraints[self.depth as usize].insert("nil".to_string(), vec!((start_of, true)));
+                            }
+                            
+                            loop {
+                                if self.match_single(Token::RightCurl) {
+                                    break;
+                                }
+                                self.eat();
+                            }
+
+                            if self.check(Token::ConstraintMacro) || self.check(Token::ErrorMacro) {
+                                continue;    
+                            }
+                        }
+                        _ => { return self.error("Error Macro preprocessor Error.".to_string());  }
                     }
+                   
                 }
                 _ => { break; }
             }
@@ -1876,16 +1922,16 @@ impl EconParser {
         self.key()
     }
     
-    fn object(&mut self) -> Result<EconValue, String> {
-        if self.match_single(Token::LeftCurl) {
-            self.locals.push(HashMap::new());
-            self.constraints.push(HashMap::new());
-            self.depth += 1;
-            self.block()
-        } else {
-            self.error(format!("Expect '{{' to begin Object definition got {:?}.", self.peek()))
-        }
-    }
+    // fn object(&mut self) -> Result<EconValue, String> {
+    //     if self.match_single(Token::LeftCurl) {
+    //         self.locals.push(HashMap::new());
+    //         self.constraints.push(HashMap::new());
+    //         self.depth += 1;
+    //         self.block()
+    //     } else {
+    //         self.error(format!("Expect '{{' to begin Object definition got {:?}.", self.peek()))
+    //     }
+    // }
     
     fn block(&mut self) -> Result<EconValue, String> {
         let mut result = EconObj::new();
