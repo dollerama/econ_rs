@@ -32,6 +32,25 @@ mod tests {
     }
 
     #[test]
+    fn logic_arithmetic() {
+        let obj = Econ::create(
+        r#"
+        {
+            //a comment
+            a: [1, "string", true, false, nil, 1 > 2, 1 < 2, 1 >= 1, 1 <= 1, 1 == 1, 1 ~= 2, true && true, true || false, true and true, true or true, not true, ~true],
+            b: ((1+3)/2) * (5/3),
+            c: #[1,2,3,4],
+            d: "hello" == "hello" ? true : false,
+            e: [1,2,3] + [4,5,6],
+            f: {a: 1} + {b: 2},
+            g: $e[2],
+            h: $f.b,
+        }
+        "#, true);
+        assert_eq!(true, matches!(obj, Ok(_)));
+    }
+
+    #[test]
     fn complex_from_file() {
         //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/Complex.econ").unwrap()).expect("JSON was not well-formatted");
         //println!("{}", a);
