@@ -32,7 +32,7 @@ mod tests {
         r#"
         {
             try { 
-                a: true - 1,
+                a: true,
                 b: false + 1,
             }
             hi: 1
