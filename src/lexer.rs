@@ -11,7 +11,7 @@ pub enum Function {
     Values,
     Fold,
     Sort,
-    Zip
+    Zip,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -79,7 +79,7 @@ pub struct EconLexer<'a> {
     current: usize,
     macros: HashMap<String, (Vec<TokenData>, Vec<TokenData>)>,
     source_as_vec: Vec<&'a str>,
-    current_string_read: String
+    current_string_read: String,
 }
 
 impl<'a> EconLexer<'a> {
@@ -91,49 +91,58 @@ impl<'a> EconLexer<'a> {
             line: 0,
             macros: HashMap::new(),
             source_as_vec: source.graphemes(true).collect::<Vec<&'a str>>(),
-            current_string_read: String::from("")
+            current_string_read: String::from(""),
         }
     }
-    
+
     fn error<T>(&self, msg: String) -> Result<T, String> {
-        Err(format!("Line:[{:04}] -> Error Lexing -> {}", self.line, msg.clone()))
+        Err(format!(
+            "Line:[{:04}] -> Error Lexing -> {}",
+            self.line,
+            msg.clone()
+        ))
     }
-    
+
     fn peek(&self) -> Option<&str> {
         self.source_as_vec.get(self.current).copied()
     }
-    
+
     fn peek_next(&self) -> Option<&str> {
-        if self.at_end() { 
+        if self.at_end() {
             None
         } else {
-            self.source_as_vec.get(self.current+1).copied()
+            self.source_as_vec.get(self.current + 1).copied()
         }
     }
-    
+
     fn advance(&mut self) -> Option<&str> {
         let t = self.source_as_vec.get(self.current).copied().unwrap();
         self.current_string_read.push_str(t);
-        
+
         self.current += 1;
-        self.source_as_vec.get(self.current-1).copied()
+        self.source_as_vec.get(self.current - 1).copied()
     }
-    
+
     fn eat(&mut self) {
         let t = self.source_as_vec.get(self.current).copied().unwrap();
         self.current_string_read.push_str(t);
-        
+
         self.current += 1;
     }
-    
+
     fn make_token(&self, t: Token) -> Result<TokenData, String> {
-        Ok(TokenData{ token: t, line: self.line })
+        Ok(TokenData {
+            token: t,
+            line: self.line,
+        })
     }
-    
+
     fn skip_whitespace(&mut self) -> Result<(), String> {
         loop {
             match self.peek() {
-                Some(" ") | Some("\t") => { self.eat(); }
+                Some(" ") | Some("\t") => {
+                    self.eat();
+                }
                 Some("/") => {
                     if let Some("/") = self.peek_next() {
                         loop {
@@ -146,25 +155,27 @@ impl<'a> EconLexer<'a> {
                         break;
                     }
                 }
-                Some("\n") => { 
+                Some("\n") => {
                     self.line += 1;
-                    self.eat(); 
+                    self.eat();
                 }
-                _ => { return Ok(()); }
+                _ => {
+                    return Ok(());
+                }
             }
         }
-        
+
         Ok(())
     }
-     
+
     fn at_end(&self) -> bool {
         self.current >= self.source_as_vec.len()
     }
-    
+
     fn is_digit(c: &str) -> bool {
         c >= "0" && c <= "9"
     }
-    
+
     fn number(&mut self) -> Result<TokenData, String> {
         loop {
             if let Some(v) = self.peek() {
@@ -177,11 +188,11 @@ impl<'a> EconLexer<'a> {
                 return self.error("Unterminated Number.".to_string());
             }
         }
-        
+
         if let (Some(v), Some(n)) = (self.peek(), self.peek_next()) {
             if v == "." && Self::is_digit(n) {
                 self.eat();
-                
+
                 loop {
                     if let Some(v) = self.peek() {
                         if Self::is_digit(v) {
@@ -195,19 +206,15 @@ impl<'a> EconLexer<'a> {
                 }
             }
         }
-        
+
         let string_to_use = self.current_string_read.parse::<f64>();
-            
+
         match string_to_use {
-            Ok(val) => {
-                self.make_token(Token::Num(val))
-            }
-            Err(_) => {
-                self.error("Invalid Number.".to_string())
-            }
+            Ok(val) => self.make_token(Token::Num(val)),
+            Err(_) => self.error("Invalid Number.".to_string()),
         }
     }
-    
+
     fn string(&mut self) -> Result<TokenData, String> {
         while let Some(v) = self.peek() {
             if v == "\\" {
@@ -221,7 +228,7 @@ impl<'a> EconLexer<'a> {
                 }
             }
         }
-        
+
         if self.at_end() {
             self.error("Unterminated String.".to_string())
         } else {
@@ -230,18 +237,18 @@ impl<'a> EconLexer<'a> {
             self.make_token(Token::Str(String::from(build.replace("\\\"", "\""))))
         }
     }
-    
+
     fn variable(&mut self) -> Result<TokenData, String> {
         while let Some(v) = self.peek() {
-            if let "/" | "*" | "+" | "-" | "(" | ")" | " " 
-            | "\n" | "." | "," | "[" | "]" | ";" | ":" 
-            | "|" | "@" | "%" = v {
+            if let "/" | "*" | "+" | "-" | "(" | ")" | " " | "\n" | "." | "," | "[" | "]" | ";"
+            | ":" | "|" | "@" | "%" = v
+            {
                 break;
             } else {
                 self.eat();
             }
         }
-        
+
         if self.at_end() {
             self.error("Unterminated Variable.".to_string())
         } else {
@@ -251,7 +258,7 @@ impl<'a> EconLexer<'a> {
                     search = -1;
                     break;
                 }
-            
+
                 if let "$" = v {
                     search += 1;
                 } else {
@@ -261,21 +268,26 @@ impl<'a> EconLexer<'a> {
                 }
                 self.start += 1;
             }
-            
+
             let build = self.current_string_read[1..].to_string();
-            
-            Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
+
+            Ok(TokenData {
+                token: Token::Var((search, build)),
+                line: self.line,
+            })
         }
     }
-    
+
     fn keyword(&mut self) -> Result<TokenData, String> {
         while let Some(v) = self.peek() {
-            if !Self::is_alpha(v) { break; }
+            if !Self::is_alpha(v) {
+                break;
+            }
             self.eat();
         }
 
         let build = &self.current_string_read;
-        
+
         if build == "true" {
             self.make_token(Token::Bool(true))
         } else if build == "false" {
@@ -310,10 +322,12 @@ impl<'a> EconLexer<'a> {
             self.make_token(Token::Fn(Function::Zip))
         } else {
             while let Some(v) = self.peek() {
-                if !Self::is_alpha(v) && !Self::is_digit(v) && v != " " { break; }
+                if !Self::is_alpha(v) && !Self::is_digit(v) {
+                    break;
+                }
                 self.eat();
             }
-            
+
             let build = self.current_string_read[0..].to_string();
             self.make_token(Token::Str(build.replace(r#"\\""#, r#"""#)))
         }
@@ -328,73 +342,97 @@ impl<'a> EconLexer<'a> {
             } else {
                 None
             };
-            
+
             if let Some(m) = macro_obj {
                 if let Some("(") = self.peek() {
                     self.eat();
-                    
-                    let mut groupings = vec!();
+
+                    let mut groupings = vec![];
 
                     if let Some(")") = self.peek() {
                         self.eat();
                     } else {
-                        let mut current_group = vec!();
+                        let mut current_group = vec![];
                         let mut depth = 1;
-                        
+
                         loop {
                             let t = self.scan()?;
-        
+
                             match &t {
-                                TokenData{ token: Token::Comma, .. } => {
-                                    let mut tmp = vec!();
+                                TokenData {
+                                    token: Token::Comma,
+                                    ..
+                                } => {
+                                    let mut tmp = vec![];
                                     for i in current_group {
                                         tmp.push(i);
                                     }
                                     groupings.push(tmp);
-                                    current_group = vec!();
+                                    current_group = vec![];
                                     continue;
                                 }
-                                TokenData{ token: Token::Macro(tt), .. } => {
+                                TokenData {
+                                    token: Token::Macro(tt),
+                                    ..
+                                } => {
                                     for i in tt {
                                         current_group.push(i.clone());
                                     }
                                     continue;
                                 }
-                                TokenData{ token: Token::LeftParen, .. } => {
+                                TokenData {
+                                    token: Token::LeftParen,
+                                    ..
+                                } => {
                                     depth += 1;
                                 }
-                                TokenData{ token: Token::RightParen, .. } => {
+                                TokenData {
+                                    token: Token::RightParen,
+                                    ..
+                                } => {
                                     depth -= 1;
                                     if depth <= 0 {
-                                        let mut tmp = vec!();
+                                        let mut tmp = vec![];
                                         for i in current_group {
                                             tmp.push(i);
                                         }
                                         groupings.push(tmp);
-                                        current_group = vec!();
+                                        current_group = vec![];
                                         break;
                                     }
                                 }
-                                TokenData{ token: Token::EOF, .. } => {
-                                    return self.error(format!("Unterminated Macro {}", s))
-                                }
-                                _ => { }
+                                TokenData {
+                                    token: Token::EOF, ..
+                                } => return self.error(format!("Unterminated Macro {}", s)),
+                                _ => {}
                             }
-                            
+
                             current_group.push(t);
                         }
                     }
-                    
+
                     if m.0.len() != groupings.len() {
-                        self.error(format!("{} of {} args supplied to {}.", groupings.len(), m.0.len(), s))
+                        self.error(format!(
+                            "{} of {} args supplied to {}.",
+                            groupings.len(),
+                            m.0.len(),
+                            s
+                        ))
                     } else {
-                        let mut new_stream = vec!();
-                        
+                        let mut new_stream = vec![];
+
                         'outer: for i in m.1 {
-                            match i  {
-                                TokenData{ token: Token::Str(ref s), .. } => {
+                            match i {
+                                TokenData {
+                                    token: Token::Str(ref s),
+                                    ..
+                                } => {
                                     for (j, item) in m.0.iter().enumerate() {
-                                        if let TokenData{ token: Token::Str(ss), .. } = item {
+                                        if let TokenData {
+                                            token: Token::Str(ss),
+                                            ..
+                                        } = item
+                                        {
                                             if *s == *ss {
                                                 for k in groupings[j].iter() {
                                                     new_stream.push(k.clone());
@@ -403,7 +441,7 @@ impl<'a> EconLexer<'a> {
                                             }
                                         }
                                     }
-                                    
+
                                     new_stream.push(i);
                                 }
                                 _ => {
@@ -419,52 +457,60 @@ impl<'a> EconLexer<'a> {
             } else {
                 if let Some("(") = self.peek() {
                     self.eat();
-                    
+
                     let mut params = Vec::<TokenData>::new();
-                
+
                     if let Some(")") = self.peek() {
                         self.eat();
                     } else {
                         loop {
                             match self.scan()? {
-                                TokenData{ token: Token::Comma, .. } => {
+                                TokenData {
+                                    token: Token::Comma,
+                                    ..
+                                } => {
                                     continue;
                                 }
-                                TokenData{ token: Token::RightParen, .. } => {
+                                TokenData {
+                                    token: Token::RightParen,
+                                    ..
+                                } => {
                                     break;
                                 }
-                                TokenData{ token: Token::EOF, .. } => {
-                                    return self.error(format!("Unterminated Macro {}", s))
+                                TokenData {
+                                    token: Token::EOF, ..
+                                } => return self.error(format!("Unterminated Macro {}", s)),
+                                t => {
+                                    params.push(t);
                                 }
-                                t => { params.push(t); }
                             }
                         }
                     }
-                    
-                    let mut stream = vec!();
+
+                    let mut stream = vec![];
                     loop {
                         while let Some(" ") | Some("\t") = self.peek() {
                             self.eat();
                         }
                         self.start = self.current;
-                        
+
                         if let Some("\\") = self.peek() {
-                            self.eat(); 
+                            self.eat();
                             self.skip_whitespace()?;
                             self.start = self.current;
                         }
-                        
+
                         if let Some("\n") = self.peek() {
                             break;
                         }
-                        
+
                         stream.push(self.scan()?);
                     }
-                    
+
                     self.macros.insert(s.clone(), (params, stream));
 
                     //a somewhat hacky way of telling the lexer to process the macro
-                    Err("Macro".to_string()) 
+                    Err("Macro".to_string())
                 } else {
                     self.error(format!("Expect '(' after Macro {}.", s))
                 }
@@ -473,56 +519,60 @@ impl<'a> EconLexer<'a> {
             self.error("Unexpected Token.".to_string())
         }
     }
-     
+
     fn is_alpha(c: &str) -> bool {
-        (c >= "a" && c <= "z") ||
-        (c >= "A" && c <= "Z") ||
-        c == "_" || c == "'" || c == "!" || 
-        c == "?" || c == "%" || c == "^" ||
-        c == "=" || c == "`" || c == "<" ||
-        c == ">"
+        (c >= "a" && c <= "z")
+            || (c >= "A" && c <= "Z")
+            || c == "_"
+            || c == "'"
+            || c == "!"
+            || c == "?"
+            || c == "%"
+            || c == "^"
+            || c == "="
+            || c == "`"
+            || c == "<"
+            || c == ">"
     }
-    
+
     pub fn scan(&mut self) -> Result<TokenData, String> {
         self.skip_whitespace()?;
         self.current_string_read = String::from("");
         self.start = self.current;
-        
-        if self.at_end() { 
+
+        if self.at_end() {
             self.make_token(Token::EOF)
         } else {
             match self.advance() {
-                Some("{") => { self.make_token(Token::LeftCurl) }
-                Some("}") => { self.make_token(Token::RightCurl) }
-                Some("[") => { self.make_token(Token::LeftBracket) }
-                Some("]") => { self.make_token(Token::RightBracket) }
-                Some("(") => { self.make_token(Token::LeftParen) }
-                Some(")") => { self.make_token(Token::RightParen) }
-                Some(",") => { self.make_token(Token::Comma) }
-                Some(":") => { self.make_token(Token::Colon) }
-                Some("+") => { self.make_token(Token::Plus) }
-                Some("-") => { self.make_token(Token::Minus) }
-                Some(";") => { self.make_token(Token::SemiColon) }
-                Some("?") => { self.make_token(Token::Question) }
-                Some("*") => { self.make_token(Token::Mult) }
-                Some("/") => { self.make_token(Token::Div) }
-                Some(".") => { self.make_token(Token::Dot) }
-                Some("\\") => { self.make_token(Token::BackSlash) }
-                Some("#") => { self.make_token(Token::Sharp) }
-                Some("%") => { self.make_token(Token::Percent) }
-                Some("=") => {
-                    match self.peek() {
-                        Some("=") => {
-                            self.eat();
-                            self.make_token(Token::Equal)
-                        }
-                        Some(">") => {
-                            self.eat();
-                            self.make_token(Token::Arrow)
-                        }
-                        _ => { self.error("Unexpected Token.".to_string()) }
+                Some("{") => self.make_token(Token::LeftCurl),
+                Some("}") => self.make_token(Token::RightCurl),
+                Some("[") => self.make_token(Token::LeftBracket),
+                Some("]") => self.make_token(Token::RightBracket),
+                Some("(") => self.make_token(Token::LeftParen),
+                Some(")") => self.make_token(Token::RightParen),
+                Some(",") => self.make_token(Token::Comma),
+                Some(":") => self.make_token(Token::Colon),
+                Some("+") => self.make_token(Token::Plus),
+                Some("-") => self.make_token(Token::Minus),
+                Some(";") => self.make_token(Token::SemiColon),
+                Some("?") => self.make_token(Token::Question),
+                Some("*") => self.make_token(Token::Mult),
+                Some("/") => self.make_token(Token::Div),
+                Some(".") => self.make_token(Token::Dot),
+                Some("\\") => self.make_token(Token::BackSlash),
+                Some("#") => self.make_token(Token::Sharp),
+                Some("%") => self.make_token(Token::Percent),
+                Some("=") => match self.peek() {
+                    Some("=") => {
+                        self.eat();
+                        self.make_token(Token::Equal)
                     }
-                }
+                    Some(">") => {
+                        self.eat();
+                        self.make_token(Token::Arrow)
+                    }
+                    _ => self.error("Unexpected Token.".to_string()),
+                },
                 Some("&") => {
                     if let Some("&") = self.peek() {
                         self.eat();
@@ -563,35 +613,29 @@ impl<'a> EconLexer<'a> {
                         self.make_token(Token::Less)
                     }
                 }
-                Some("@") => { 
-                    match self.peek() {
-                        Some("{") => {
-                            self.make_token(Token::ConstraintMacro)
-                        }
-                        Some("!") => {
-                            self.eat();
-                            self.make_token(Token::ErrorMacro)
-                        }
-                        _ => {
-                            self.macro_t()
-                        }
+                Some("@") => match self.peek() {
+                    Some("{") => self.make_token(Token::ConstraintMacro),
+                    Some("!") => {
+                        self.eat();
+                        self.make_token(Token::ErrorMacro)
                     }
-                }
-                Some("\"") => { self.string() }
-                Some("$") | Some("!") => { self.variable() }
+                    _ => self.macro_t(),
+                },
+                Some("\"") => self.string(),
+                Some("$") | Some("!") => self.variable(),
                 Some(v) => {
                     if Self::is_digit(v) {
                         self.number()
-                    } else if Self::is_alpha(v)  {
+                    } else if Self::is_alpha(v) {
                         self.keyword()
                     } else {
                         let v2 = self.peek();
                         self.error(format!("Unexpected Token got {:?}.", v2))
                     }
                 }
-                _ => { 
+                _ => {
                     let v2 = self.peek();
-                    self.error(format!("Unexpected Token got {:?}.", v2)) 
+                    self.error(format!("Unexpected Token got {:?}.", v2))
                 }
             }
         }

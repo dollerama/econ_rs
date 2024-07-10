@@ -1,8 +1,8 @@
 pub mod econ;
-pub mod object;
-pub mod value;
 pub mod lexer;
+pub mod object;
 pub mod parser;
+pub mod value;
 
 #[cfg(test)]
 mod tests {
@@ -16,25 +16,30 @@ mod tests {
     #[test]
     fn simple() {
         let obj = Econ::create(
-        r#"
+            r#"
         {
             a: 1,
             b: 2,
             c: 3
         }
-        "#, true);
+        "#,
+            true,
+        );
         assert_eq!(true, matches!(obj, Ok(_)));
     }
 
     #[test]
     fn simple_from_file() {
-        assert_eq!(true, matches!(Econ::create("test/Simple.econ", true), Ok(_)));
+        assert_eq!(
+            true,
+            matches!(Econ::create("test/Simple.econ", true), Ok(_))
+        );
     }
 
     #[test]
     fn logic_arithmetic() {
         let obj = Econ::create(
-        r#"
+            r#"
         {
             //a comment
             a: [1, "string", true, false, nil, 1 > 2, 1 < 2, 1 >= 1, 1 <= 1, 1 == 1, 1 ~= 2, true && true, true || false, true and true, true or true, not true, ~true],
@@ -45,7 +50,7 @@ mod tests {
             f: {a: 1} + {b: 2},
             g: $e[2],
             h: $f.b,
-            i: I'm a multiline \
+            i: "I'm a multiline" \
                "string with \"* + - / filter\"" \
                "keywords and operators",
             j: [
@@ -64,7 +69,9 @@ mod tests {
                "in" \
                "object",
         }
-        "#, true);
+        "#,
+            true,
+        );
 
         assert_eq!(true, matches!(obj, Ok(_)));
     }
@@ -73,25 +80,33 @@ mod tests {
     fn complex_from_file() {
         //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/Complex.econ").unwrap()).expect("JSON was not well-formatted");
         //println!("{}", a);
-        assert_eq!(true, matches!(Econ::create("test/Complex.econ", true), Ok(_)));
+        assert_eq!(
+            true,
+            matches!(Econ::create("test/Complex.econ", true), Ok(_))
+        );
     }
 
     #[test]
     fn large_from_file() {
         //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/large-file.json").unwrap()).expect("JSON was not well-formatted");
         //println!("{}", a);
-        assert_eq!(true, matches!(Econ::create("test/large-file.json", false), Ok(_)));
+        assert_eq!(
+            true,
+            matches!(Econ::create("test/large-file.json", false), Ok(_))
+        );
     }
 
     #[test]
     fn functions() {
         let obj = Econ::create(
-        r#"
+            r#"
         {
             aa: "Hello,how,are,you",
             a: to_string(map(chars($aa), x => $x == "," ? " " : $x))
         }
-        "#, true);
+        "#,
+            true,
+        );
 
         assert_eq!(true, matches!(obj, Ok(_)));
     }
@@ -99,7 +114,7 @@ mod tests {
     #[test]
     fn macros() {
         let obj = Econ::create(
-        r#"
+            r#"
         {
             @person(n, a, s) n: { age: a, salary: s }
             people: {
@@ -112,7 +127,9 @@ mod tests {
             average_salary: fold($people, |x, acc| => $acc + $x.val.salary) / #$people,
             people_above_average: sort(keys(filter($people, x => $x.val.salary > $average_salary)), |a, b| => !a > !b)
         }
-        "#, true);
+        "#,
+            true,
+        );
 
         assert_eq!(true, matches!(obj, Ok(_)));
     }
@@ -120,7 +137,7 @@ mod tests {
     #[test]
     fn api_access_obj() {
         let obj = Econ::from(
-        r#"
+            r#"
         {
             a: {
                 b: {
@@ -133,27 +150,30 @@ mod tests {
                 }
             }
         }
-        "#);
+        "#,
+        );
         assert_eq!(3f64, obj["a"]["b"]["c"][2].value::<f64>());
     }
 
     #[test]
     fn constraints() {
         let obj = Econ::create(
-        r#"
+            r#"
         {
             @!{string, x => $x == "Hello World", "No Hello Worlds!"}
             a: "Hello World"
         }
-        "#, true);
-        
+        "#,
+            true,
+        );
+
         assert_eq!(true, matches!(obj, Err(_)));
     }
 
     #[test]
     fn ref_depth() {
         let obj = Econ::create(
-        r#"
+            r#"
         {
             a: {
                 aa: 1,
@@ -164,8 +184,10 @@ mod tests {
                 ba: !a
             }
         }
-        "#, true);
-        
+        "#,
+            true,
+        );
+
         assert_eq!(true, matches!(obj, Ok(_)));
     }
 
@@ -174,19 +196,19 @@ mod tests {
         #[derive(Debug, Serialize, Deserialize, PartialEq)]
         struct Point {
             x: f64,
-            y: f64
+            y: f64,
         }
 
         let p;
         let obj = Econ::from(
-        r#"
+            r#"
         {
             x: 1+1,
             y: 2+5
         }
-        "#);
+        "#,
+        );
         p = Econ::to_struct::<Point>(&obj).unwrap();
-        assert_eq!(Point{x: 2.0, y: 7.0}, p);
+        assert_eq!(Point { x: 2.0, y: 7.0 }, p);
     }
 }
-
