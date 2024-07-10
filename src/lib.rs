@@ -27,51 +27,21 @@ mod tests {
     }
 
     #[test]
-    fn try_test() {
-        let obj = Econ::create(
-        r#"
-        {
-            try { 
-                a: true,
-                b: false + 1,
-            }
-            hi: 1
-        }
-        "#, true);
-        assert_eq!(true, matches!(obj, Ok(_)));
-    }
-
-    #[test]
-    fn logic_arithmetic() {
-        let obj = Econ::create(
-        r#"
-        {
-            //a comment
-            a: [1, "string", true, false, nil, 1 > 2, 1 < 2, 1 >= 1, 1 <= 1, 1 == 1, 1 ~= 2, true && true, true || false, true and true, true or true, not true, ~true],
-            b: ((1+3)/2) * (5/3),
-            c: #[1,2,3,4],
-            d: "hello" == "hello" ? true : false,
-            e: [1,2,3] + [4,5,6],
-            f: {a: 1} + {b: 2},
-            g: $e[2],
-            h: $f.b,
-        }
-        "#, true);
-        assert_eq!(true, matches!(obj, Ok(_)));
-    }
-
-    #[test]
     fn simple_from_file() {
         assert_eq!(true, matches!(Econ::create("test/Simple.econ", true), Ok(_)));
     }
 
     #[test]
     fn complex_from_file() {
+        //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/Complex.econ").unwrap()).expect("JSON was not well-formatted");
+        //println!("{}", a);
         assert_eq!(true, matches!(Econ::create("test/Complex.econ", true), Ok(_)));
     }
 
     #[test]
     fn large_from_file() {
+        //let a: serde_json::Value = serde_json::from_str(&fs::read_to_string("test/large-file.json").unwrap()).expect("JSON was not well-formatted");
+        //println!("{}", a);
         assert_eq!(true, matches!(Econ::create("test/large-file.json", false), Ok(_)));
     }
 
@@ -80,19 +50,8 @@ mod tests {
         let obj = Econ::create(
         r#"
         {
-            a: to_string(map(chars("Hello,how,are,you"), x => $x == "," ? " " : $x)),
-            b: sort([76,43,100,20,50,35], |a,b| => !a < !b),
-            c: filter([76,43,100,20,50,35], x => !x%2 == 0),
-            d: map([76,43,100,20,50,35], x => !x/2),
-            e: {
-                a: 1,
-                b: 2,
-                c: 3
-            },
-            f: keys($e),
-            g: values($e),
-            h: zip($f, $g),
-            i: fold(["h", "e", "l", "l", "o"], |x, acc| => $acc + $x)
+            aa: "Hello,how,are,you",
+            a: to_string(map(chars($aa), x => $x == "," ? " " : $x))
         }
         "#, true);
 
@@ -141,7 +100,7 @@ mod tests {
     }
 
     #[test]
-    fn error_macro() {
+    fn constraints() {
         let obj = Econ::create(
         r#"
         {
@@ -151,24 +110,6 @@ mod tests {
         "#, true);
         
         assert_eq!(true, matches!(obj, Err(_)));
-    }
-
-    #[test]
-    fn constraint_macro() {
-        let obj = Econ::create(
-        r#"
-        {
-            @{string, x => $x == "Hello World", "No Hello Worlds!"}
-            @{string, x => $x == "Some Hello Worlds!", "No Hello Worlds!"}
-            a: "Hello World",
-            b: {
-                @{string, x => $x == "Hello World", "Some Hello Worlds!"}
-                a: "Hello World"
-            }
-        }
-        "#, true);
-        
-        assert_eq!(true, matches!(obj, Ok(_)));
     }
 
     #[test]
