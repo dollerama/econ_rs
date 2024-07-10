@@ -67,9 +67,47 @@ impl EconObj {
                     }
                     EconValue::Str(s) => {
                         if i+1 < arr.len() {
-                            result.push_str(&format!("\"{}\",\n", s));
+                            for (ind, line) in s.lines().enumerate() {
+                                if ind == 0 {
+                                    if s.lines().count() == 1 {
+                                        result.push_str(&format!("\"{}", line));
+                                    } else {
+                                        result.push_str(&format!("\"{}\n", line));
+                                    }
+                                } else if ind == s.lines().count()-1 {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    result.push_str(&format!(" {}", line));
+                                } else {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    result.push_str(&format!(" {}\n", line));
+                                }
+                            }
+                            result.push_str(&format!("\",\n"));
                         } else {
-                            result.push_str(&format!("\"{}\"\n", s));
+                            for (ind, line) in s.lines().enumerate() {
+                                if ind == 0 {
+                                    if s.lines().count() == 1 {
+                                        result.push_str(&format!("\"{}", line));
+                                    } else {
+                                        result.push_str(&format!("\"{}\n", line));
+                                    }
+                                } else if ind == s.lines().count()-1 {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    result.push_str(&format!(" {}", line));
+                                } else {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    result.push_str(&format!(" {}\n", line));
+                                }
+                            }
+                            result.push_str(&format!("\"\n"));
                         }
                     }
                     EconValue::Nil => {
@@ -138,9 +176,59 @@ impl EconObj {
                     }
                     EconValue::Str(s) => {
                         if i+1 < obj.data.keys().len() {
-                            result.push_str(&format!("\"{}\": \"{}\",\n", k, s));
+                            for (ind, line) in s.lines().enumerate() {
+                                if ind == 0 {
+                                    if s.lines().count() == 1 {
+                                        result.push_str(&format!("\"{}\": \"{}", k, line));
+                                    } else {
+                                        result.push_str(&format!("\"{}\": \"{}\n", k, line));
+                                    }
+                                } else if ind == s.lines().count()-1 {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    for _ in 0..5+k.len() {
+                                        result.push(' ');
+                                    }
+                                    result.push_str(&format!("{}", line));
+                                } else {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    for _ in 0..5+k.len() {
+                                        result.push(' ');
+                                    }
+                                    result.push_str(&format!("{}\n", line));
+                                }
+                            }
+                            result.push_str(&format!("\",\n"));
                         } else {
-                            result.push_str(&format!("\"{}\": \"{}\"\n", k, s));
+                            for (ind, line) in s.lines().enumerate() {
+                                if ind == 0 {
+                                    if s.lines().count() == 1 {
+                                        result.push_str(&format!("\"{}\": \"{}", k, line));
+                                    } else {
+                                        result.push_str(&format!("\"{}\": \"{}\n", k, line));
+                                    }
+                                } else if ind == s.lines().count()-1 {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    for _ in 0..5+k.len() {
+                                        result.push(' ');
+                                    }
+                                    result.push_str(&format!("{}", line));
+                                } else {
+                                    for _ in 0..depth+1 {
+                                        result.push_str("\t");
+                                    }
+                                    for _ in 0..5+k.len() {
+                                        result.push(' ');
+                                    }
+                                    result.push_str(&format!("{}\n", line));
+                                }
+                            }
+                            result.push_str(&format!("\"\n"));
                         }
                     }
                     EconValue::Nil => {

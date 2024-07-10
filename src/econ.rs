@@ -117,7 +117,7 @@ impl Econ {
     /// }
     /// "#);
     /// ```
-    /// ```rust,ignore
+    /// ```rust
     /// use econ_rs::econ::Econ;
     ///
     /// let obj = Econ::from("path/file.econ");

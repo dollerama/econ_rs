@@ -48,6 +48,13 @@ strings not enclosed with ``"``'s must start with a letter but may contain speci
 "I'm a string with spaces"
 Im_a_string_without_spaces
 ```
+You can also make multiline strings that will be formatted in a nice way using the ``\`` operator.
+```js
+"i": I'm a multiline \
+     "string with \"* + - / filter\"" \
+     "keywords and operators",
+```
+
 >Object keys are parsed as strings so the same rules apply to them as with string values.
 >```js
 >key_with_no_spaces: 1 //valid
@@ -120,7 +127,7 @@ nil
  - [Functions](#Functions)
 ## Operators
 **Econ** supports
- - Arithmetic ``+``, ``-``, ``*``, ``/``, ``%``
+ - Arithmetic ``+``, ``-``, ``*``, ``/``, ``%``, ``\``
  - Logic ``or``/``||``, ``and``/``&&``, ``not``/``~``
  - Comparison ``>``, ``>=``, ``<``, ``<=``, ``==``, ``~=``
  - Grouping ``()``
@@ -134,8 +141,69 @@ nil
  **Econ** will do its best to perform arithmetic on types but will not make large leaps. For example: ``"Hello" + " " + "World"`` will yield ``"Hello World"`` or ``"The Number Two ->" + 2`` will yield ``"The Number Two -> 2"`` but ``true + 2`` will throw an error ``
 Error Parsing -> "Invalid addition of types."
 ``
-
-**Econ** can concatenate Objects and Arrays as well. 
+#### Example
+>Input 
+```js
+{
+	a: ((1+3)/2) * (5/3),
+	//The \ operator wil concat strings or strings and bools/numbers with a newline inebetween.
+	d: I'm a multiline \
+		"string with \"* + - / filter\"" \
+		"keywords and operators",
+	e: [
+		"multi_line" \
+		"string" \
+		"in" \
+		"array",
+		"single line",
+		"another multi_line" \
+		"string" \
+		"in" \
+		"array"
+	],
+	f: "another multi_line" \
+		"string" \
+		"in" \
+		"object",
+}
+```
+>Output
+```js
+{
+	"a": 3.3333333333333335,
+	"b": [
+		1,
+		2,
+		3,
+		4,
+		5,
+		6
+	],
+	"c": {
+		"a": 1,
+		"b": 2
+	},
+	"d": "I'm a multiline 
+		  string with "* + - / filter"
+		  keywords and operators",
+	"e": [
+			"multi_line
+			 string
+			 in
+			 array",
+			"single line",
+			"another multi_line
+			 string
+			 in
+			 array"
+	],
+	"f": "another multi_line
+		  string
+		  in
+		  object"
+}
+```
+**Econ** can concatenate Objects and Arrays.
 
 >Input
 ```js

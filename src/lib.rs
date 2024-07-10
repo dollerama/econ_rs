@@ -45,8 +45,27 @@ mod tests {
             f: {a: 1} + {b: 2},
             g: $e[2],
             h: $f.b,
+            i: I'm a multiline \
+               "string with \"* + - / filter\"" \
+               "keywords and operators",
+            j: [
+                "multi_line" \
+                "string" \
+                "in" \
+                "array",
+                "single line",
+                "another multi_line" \
+                "string" \
+                "in" \
+                "array"
+            ],
+            k: "another multi_line" \
+               "string" \
+               "in" \
+               "object",
         }
         "#, true);
+
         assert_eq!(true, matches!(obj, Ok(_)));
     }
 

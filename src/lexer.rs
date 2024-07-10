@@ -227,7 +227,7 @@ impl<'a> EconLexer<'a> {
         } else {
             let build = self.current_string_read[1..].to_string();
             self.eat();
-            self.make_token(Token::Str(String::from(build)))
+            self.make_token(Token::Str(String::from(build.replace("\\\"", "\""))))
         }
     }
     
@@ -263,6 +263,7 @@ impl<'a> EconLexer<'a> {
             }
             
             let build = self.current_string_read[1..].to_string();
+            
             Ok(TokenData{ token: Token::Var((search, build)), line: self.line})
         }
     }
@@ -309,12 +310,12 @@ impl<'a> EconLexer<'a> {
             self.make_token(Token::Fn(Function::Zip))
         } else {
             while let Some(v) = self.peek() {
-                if !Self::is_alpha(v) && !Self::is_digit(v) { break; }
+                if !Self::is_alpha(v) && !Self::is_digit(v) && v != " " { break; }
                 self.eat();
             }
             
             let build = self.current_string_read[0..].to_string();
-            self.make_token(Token::Str(build))
+            self.make_token(Token::Str(build.replace(r#"\\""#, r#"""#)))
         }
     }
 
@@ -476,7 +477,10 @@ impl<'a> EconLexer<'a> {
     fn is_alpha(c: &str) -> bool {
         (c >= "a" && c <= "z") ||
         (c >= "A" && c <= "Z") ||
-        c == "_"
+        c == "_" || c == "'" || c == "!" || 
+        c == "?" || c == "%" || c == "^" ||
+        c == "=" || c == "`" || c == "<" ||
+        c == ">"
     }
     
     pub fn scan(&mut self) -> Result<TokenData, String> {
