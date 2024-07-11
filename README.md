@@ -50,7 +50,7 @@ Im_a_string_without_spaces
 ```
 You can also make multiline strings that will be formatted in a nice way using the ``\`` operator.
 ```js
-"i": I'm a multiline \
+"i": "I'm a multiline" \
      "string with \"* + - / filter\"" \
      "keywords and operators",
 ```
