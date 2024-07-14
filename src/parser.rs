@@ -394,7 +394,7 @@ impl EconParser {
                             
                             EconValue::Obj(new_obj)
                         }
-                        _ => return self.error(format!("Invalid addition of types: {} and {}", left, right))
+                        _ => return self.error(format!("Invalid '+' of types: {} and {}", left, right))
                     };
                 }
                 Token::BackSlash => {
@@ -423,7 +423,7 @@ impl EconParser {
                         (&EconValue::Bool(ref n1), &EconValue::Str(ref n2)) =>  {
                             EconValue::Str(format!("{}\n{}", n1, n2))
                         }
-                        _ => return self.error(format!("Invalid concatenation of types: {} and {}", left, right))
+                        _ => return self.error(format!("Invalid '\' of types: {} and {}", left, right))
                     };
                 }
                 Token::Minus => {
@@ -434,7 +434,7 @@ impl EconParser {
                         (&EconValue::Num(ref n1), &EconValue::Num(ref n2)) =>  {
                             EconValue::Num(n1-n2)
                         }
-                        _ => return self.error(format!("Invalid subtraction of types: {} and {}", left, right))
+                        _ => return self.error(format!("Invalid '-' of types: {} and {}", left, right))
                     };
                 }
                 _ => {
