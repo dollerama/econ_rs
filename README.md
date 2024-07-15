@@ -11,7 +11,7 @@
 	"a": 10.50,
 	"b": "Hello World!",
 	"c": true,
-	"d": nil,
+	"d": null,
 	"e": {
 		"a": "Hello World...Again!",
 		"b": [
@@ -67,6 +67,10 @@ true
 false
 ```
 ### Nil
+```js
+null
+```
+or 
 ```js
 nil
 ```

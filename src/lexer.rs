@@ -294,6 +294,8 @@ impl<'a> EconLexer<'a> {
             self.make_token(Token::Bool(false))
         } else if build == "nil" {
             self.make_token(Token::Nil)
+        } else if build == "null" {
+            self.make_token(Token::Nil)
         } else if build == "not" {
             self.make_token(Token::Not)
         } else if build == "or" {
