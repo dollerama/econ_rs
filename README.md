@@ -127,6 +127,7 @@ nil
  - ``true``
  - ``false``
  - ``nil``
+ - ``null``
  - ``inf`` - a constant for infinity. Divide by zero's will evaluate as infinity.
  - [Functions](#Functions)
 ## Operators
