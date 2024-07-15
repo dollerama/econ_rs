@@ -68,6 +68,8 @@ mod tests {
                "string" \
                "in" \
                "object",
+            l: null,
+            m: nil
         }
         "#,
             true,
