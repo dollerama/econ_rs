@@ -11,7 +11,7 @@
 	"a": 10.50,
 	"b": "Hello World!",
 	"c": true,
-	"d": nil,
+	"d": null,
 	"e": {
 		"a": "Hello World...Again!",
 		"b": [
@@ -68,6 +68,10 @@ false
 ```
 ### Nil
 ```js
+null
+```
+or 
+```js
 nil
 ```
 ### Object
@@ -123,6 +127,7 @@ nil
  - ``true``
  - ``false``
  - ``nil``
+ - ``null``
  - ``inf`` - a constant for infinity. Divide by zero's will evaluate as infinity.
  - [Functions](#Functions)
 ## Operators

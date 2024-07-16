@@ -112,9 +112,9 @@ impl EconObj {
                     }
                     EconValue::Nil => {
                         if i+1 < arr.len() {
-                            result.push_str(&format!("nil,\n"));
+                            result.push_str(&format!("null,\n"));
                         } else {
-                            result.push_str(&format!("nil\n"));
+                            result.push_str(&format!("null\n"));
                         }
                     }
                     EconValue::Obj(o) => {
@@ -233,9 +233,9 @@ impl EconObj {
                     }
                     EconValue::Nil => {
                         if i+1 < obj.data.keys().len() {
-                            result.push_str(&format!("\"{}\": nil,\n", k));
+                            result.push_str(&format!("\"{}\": null,\n", k));
                         } else {
-                            result.push_str(&format!("\"{}\": nil\n", k));
+                            result.push_str(&format!("\"{}\": null\n", k));
                         }
                     }
                     EconValue::Arr(a) => {
