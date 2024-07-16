@@ -189,17 +189,7 @@ impl EconParser {
                             EconValue::Bool(*n1 < *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = true;
-                            for (i, c) in n1.chars().enumerate() {
-                                if let Some(c2) = n2.chars().nth(i) {
-                                    res = c2 as u32 - 48 > c as u32 - 48;
-                                    break;
-                                } else {
-                                    break;
-                                }
-                            }
-                        
-                            EconValue::Bool(res)
+                            EconValue::Bool(n1.to_lowercase().cmp(&n2.to_lowercase()).is_lt())
                         }
                         _ => return self.error(format!("Invalid '<' of types: {} and {}", left, right))
                     };
@@ -212,17 +202,7 @@ impl EconParser {
                             EconValue::Bool(*n1 > *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = true;
-                            for (i, c) in n1.chars().enumerate() {
-                                if let Some(c2) = n2.chars().nth(i) {
-                                    res = (c2 as u32 - 48) < c as u32 - 48;
-                                    break;
-                                } else {
-                                    break;
-                                }
-                            }
-                        
-                            EconValue::Bool(res)
+                            EconValue::Bool(n1.to_lowercase().cmp(&n2.to_lowercase()).is_gt())
                         }
                         _ => return self.error(format!("Invalid '>' of types: {} and {}", left, right))
                     };
@@ -235,17 +215,7 @@ impl EconParser {
                             EconValue::Bool(*n1 >= *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = true;
-                            for (i, c) in n1.chars().enumerate() {
-                                if let Some(c2) = n2.chars().nth(i) {
-                                    res = (c2 as u32 - 48) < c as u32 - 48;
-                                    break;
-                                } else {
-                                    break;
-                                }
-                            }
-                        
-                            EconValue::Bool(res)
+                            EconValue::Bool(n1.to_lowercase().cmp(&n2.to_lowercase()).is_ge())
                         }
                         _ => return self.error(format!("Invalid '>=' of types: {} and {}", left, right))
                     };
@@ -258,17 +228,7 @@ impl EconParser {
                             EconValue::Bool(*n1 <= *n2)
                         }
                         (EconValue::Str(n1), EconValue::Str(n2)) => {
-                            let mut  res: bool = true;
-                            for (i, c) in n1.chars().enumerate() {
-                                if let Some(c2) = n2.chars().nth(i) {
-                                    res = c2 as u32 - 48 > c as u32 - 48;
-                                    break;
-                                } else {
-                                    break;
-                                }
-                            }
-                        
-                            EconValue::Bool(res)
+                            EconValue::Bool(n1.to_lowercase().cmp(&n2.to_lowercase()).is_le())
                         }
                         _ => return self.error(format!("Invalid '<=' of types: {} and {}", left, right))
                     };

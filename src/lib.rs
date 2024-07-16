@@ -29,6 +29,19 @@ mod tests {
     }
 
     #[test]
+    fn string_sorting() {
+        let obj = Econ::create(
+            r#"
+        {
+            a: sort(["zba", "zaa", "zab", "aaa", "aba", "gds", "gra", "cta", "cjw", "ckq"], |a, b| => $a < $b)
+        }
+        "#,
+            true,
+        ).unwrap();
+        assert_eq!(("aaa".to_string(), "cta".to_string(), "zba".to_string()), (obj["a"][0].value::<String>(), obj["a"][4].value::<String>(), obj["a"][9].value::<String>()));
+    }
+
+    #[test]
     fn simple_from_file() {
         assert_eq!(
             true,
