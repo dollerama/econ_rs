@@ -195,15 +195,15 @@ mod tests {
                 ab: $aa
             },
             b: {
-                bb: $aa,
-                ba: !a
+                bb: $$a.aa,
+                ba: !a.ab
             }
         }
         "#,
             true,
-        );
+        ).unwrap();
 
-        assert_eq!(true, matches!(obj, Ok(_)));
+        assert_eq!((1f64, 1f64), (obj["b"]["bb"].value::<f64>(), obj["b"]["ba"].value::<f64>()));
     }
 
     #[test]
