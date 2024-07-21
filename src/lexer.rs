@@ -239,6 +239,7 @@ impl<'a> EconLexer<'a> {
     }
 
     fn variable(&mut self) -> Result<TokenData, String> {
+        self.current_string_read = String::from("");
         while let Some(v) = self.peek() {
             if let "/" | "*" | "+" | "-" | "(" | ")" | " " | "\n" | "." | "," | "[" | "]" | ";"
             | ":" | "|" | "@" | "%" = v
@@ -252,7 +253,7 @@ impl<'a> EconLexer<'a> {
         if self.at_end() {
             self.error("Unterminated Variable.".to_string())
         } else {
-            let mut search = 0;
+            let mut search : isize = 0;
             while let Some(v) = self.source_as_vec.get(self.start).copied() {
                 if let "!" = v {
                     search = -1;
@@ -269,7 +270,11 @@ impl<'a> EconLexer<'a> {
                 self.start += 1;
             }
 
-            let build = self.current_string_read[1..].to_string();
+            let build = if search >= 0 {
+                self.current_string_read[search as usize..].to_string()
+            } else {
+                self.current_string_read.to_string()
+            };
 
             Ok(TokenData {
                 token: Token::Var((search, build)),

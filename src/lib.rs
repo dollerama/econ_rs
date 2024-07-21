@@ -188,7 +188,7 @@ mod tests {
     #[test]
     fn ref_depth() {
         let obj = Econ::create(
-            r#"
+        r#"
         {
             a: {
                 aa: 1,
