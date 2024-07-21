@@ -241,7 +241,7 @@ impl<'a> EconLexer<'a> {
     fn variable(&mut self) -> Result<TokenData, String> {
         self.current_string_read = String::from("");
         while let Some(v) = self.peek() {
-            if let "/" | "*" | "+" | "-" | "(" | ")" | " " | "\n" | "." | "," | "[" | "]" | ";"
+            if let "/" | "*" | "+" | "-" | "(" | ")" | " " | "\n" | "\r" | "." | "," | "[" | "]" | ";"
             | ":" | "|" | "@" | "%" = v
             {
                 break;
