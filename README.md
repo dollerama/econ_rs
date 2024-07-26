@@ -1,3 +1,7 @@
+# Contents
+> - [Spec](#Econ-Spec)
+> - [API](#Econ-Rust-API)
+
 # Econ Spec
 
 > **E**xpression **C**onfig **N**otation
@@ -960,6 +964,12 @@ Line [0007] Error Parsing -> "Divide by zero"
 
 # Econ Rust Api
 The proof-of-concept Api for **Econ** is written in *Rust*
+## Use
+In your project add this line to your [dependecies] list in cargo.toml 
+```econ = { git = \"https://github.com/dollerama/Econ.git\" }```
+And then ``use econ::Econ`` in your Rust code.
+## Hacking Econ
+Simply fork the repo and run cargo test after making changes.
 ## Create
 You can use the create function to parse either a file or string. Create can output debug info and will return ``Result<EconObj, String>`` where as ``Econ::from()`` will return an empty ``EconObj`` if it fails and will not output debug info other than errors. 
 >Source
