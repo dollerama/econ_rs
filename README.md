@@ -966,7 +966,9 @@ Line [0007] Error Parsing -> "Divide by zero"
 The proof-of-concept Api for **Econ** is written in *Rust*
 ## Use
 In your project add this line to your [dependecies] list in cargo.toml 
-```econ = { git = "https://github.com/dollerama/Econ.git" }```
+```
+econ = { git = "https://github.com/dollerama/Econ.git" }
+```
 And then ``use econ::Econ`` in your Rust code.
 ## Hacking Econ
 Simply fork the repo and run cargo test after making changes.
