@@ -967,7 +967,7 @@ The proof-of-concept Api for **Econ** is written in *Rust*
 ## Use
 In your project add this line to your [dependecies] list in cargo.toml 
 ```
-econ = { git = "https://github.com/dollerama/Econ.git" }
+econ = { git = "https://github.com/dollerama/econ_rs.git" }
 ```
 And then ``use econ::Econ`` in your Rust code.
 ## Hacking Econ
